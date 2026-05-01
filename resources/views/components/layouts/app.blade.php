@@ -95,6 +95,7 @@
                         <a class="nav-link {{ request()->routeIs('verifications.*') ? 'active' : '' }}" href="{{ route('verifications.index') }}">Verifikasi</a>
                     @endif
                     @if (auth()->user()->isSuperAdmin())
+                        <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">User</a>
                         <a class="nav-link {{ request()->routeIs('branches.*') ? 'active' : '' }}" href="{{ route('branches.index') }}">Cabang</a>
                     @endif
                     <form class="inline" method="POST" action="{{ route('logout') }}">

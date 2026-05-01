@@ -14,6 +14,10 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_SUPER_ADMIN = 'super_admin';
+    public const ROLE_ADMIN_CABANG = 'admin_cabang';
+    public const ROLE_USER_CABANG = 'user_cabang';
+
     protected $fillable = [
         'name',
         'email',
@@ -62,16 +66,25 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->role === self::ROLE_SUPER_ADMIN;
     }
 
     public function isBranchAdmin(): bool
     {
-        return $this->role === 'admin_cabang';
+        return $this->role === self::ROLE_ADMIN_CABANG;
     }
 
     public function canVerify(): bool
     {
-        return in_array($this->role, ['admin_cabang', 'super_admin'], true);
+        return in_array($this->role, [self::ROLE_ADMIN_CABANG, self::ROLE_SUPER_ADMIN], true);
+    }
+
+    public static function roleOptions(): array
+    {
+        return [
+            self::ROLE_SUPER_ADMIN => 'Super Admin',
+            self::ROLE_ADMIN_CABANG => 'Admin Cabang',
+            self::ROLE_USER_CABANG => 'User Cabang',
+        ];
     }
 }

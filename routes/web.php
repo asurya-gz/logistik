@@ -5,6 +5,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LogisticsController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,10 @@ Route::middleware('auth')->group(function () {
         ->name('verifications.update');
 
     Route::resource('branches', BranchController::class)
+        ->middleware('role:super_admin')
+        ->except('show');
+
+    Route::resource('users', UserController::class)
         ->middleware('role:super_admin')
         ->except('show');
 });

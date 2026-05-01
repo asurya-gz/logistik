@@ -34,6 +34,42 @@ class LogisticsAppTest extends TestCase
         $response->assertSee('Manajemen Cabang');
     }
 
+    public function test_super_admin_can_access_user_management(): void
+    {
+        $user = User::create([
+            'name' => 'Super Admin',
+            'email' => 'super-user@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_SUPER_ADMIN,
+        ]);
+
+        $response = $this->actingAs($user)->get('/users');
+
+        $response->assertOk();
+        $response->assertSee('Manajemen User');
+    }
+
+    public function test_branch_user_cannot_access_user_management(): void
+    {
+        $branch = Branch::create([
+            'name' => 'Cabang A',
+            'code' => 'A1',
+            'address' => 'Alamat A',
+        ]);
+
+        $user = User::create([
+            'name' => 'User Cabang',
+            'email' => 'branch-user@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_USER_CABANG,
+            'branch_id' => $branch->id,
+        ]);
+
+        $response = $this->actingAs($user)->get('/users');
+
+        $response->assertForbidden();
+    }
+
     public function test_branch_user_only_sees_own_branch_logistics(): void
     {
         $branchA = Branch::create([
