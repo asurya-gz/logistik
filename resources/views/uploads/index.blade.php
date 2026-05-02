@@ -3,7 +3,7 @@
         <div class="card">
             <h2>Upload Data Logistik</h2>
             <p class="muted">Kolom yang didukung: <code>nama_barang</code>, <code>kategori</code>, <code>jumlah</code>, <code>tanggal</code>, <code>keterangan</code>.</p>
-            <form method="POST" action="{{ route('uploads.store') }}" enctype="multipart/form-data" class="form-grid">
+            <form method="POST" action="{{ route(auth()->user()->panelRouteName('uploads.store')) }}" enctype="multipart/form-data" class="form-grid">
                 @csrf
                 @if ($user->isSuperAdmin())
                     <div>

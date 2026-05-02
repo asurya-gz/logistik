@@ -1,7 +1,7 @@
 <x-layouts.app :title="$mode === 'create' ? 'Tambah Cabang' : 'Edit Cabang'">
     <div class="card">
         <h2>{{ $mode === 'create' ? 'Tambah Cabang' : 'Edit Cabang' }}</h2>
-        <form method="POST" action="{{ $mode === 'create' ? route('branches.store') : route('branches.update', $branch) }}" class="form-grid">
+        <form method="POST" action="{{ $mode === 'create' ? route('superadmin.branches.store') : route('superadmin.branches.update', $branch) }}" class="form-grid">
             @csrf
             @if ($mode === 'edit') @method('PUT') @endif
 
@@ -22,7 +22,7 @@
             </div>
             <div class="actions">
                 <button class="button button-primary" type="submit">Simpan</button>
-                <a class="button" href="{{ route('branches.index') }}">Batal</a>
+                <a class="button" href="{{ route('superadmin.branches.index') }}">Batal</a>
             </div>
         </form>
     </div>

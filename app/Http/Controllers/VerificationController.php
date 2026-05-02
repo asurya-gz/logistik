@@ -76,6 +76,6 @@ class VerificationController extends Controller
             ]);
         });
 
-        return redirect()->route('verifications.index')->with('success', 'Data berhasil diverifikasi.');
+        return redirect()->route($user->panelRouteName('verifications.index'))->with('success', 'Data berhasil diverifikasi.');
     }
 }

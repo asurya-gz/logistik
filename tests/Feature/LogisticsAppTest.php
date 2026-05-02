@@ -28,7 +28,7 @@ class LogisticsAppTest extends TestCase
             'role' => 'super_admin',
         ]);
 
-        $response = $this->actingAs($user)->get('/branches');
+        $response = $this->actingAs($user)->get(route('superadmin.branches.index'));
 
         $response->assertOk();
         $response->assertSee('Manajemen Cabang');
@@ -43,13 +43,13 @@ class LogisticsAppTest extends TestCase
             'role' => User::ROLE_SUPER_ADMIN,
         ]);
 
-        $response = $this->actingAs($user)->get('/users');
+        $response = $this->actingAs($user)->get(route('superadmin.users.index'));
 
         $response->assertOk();
         $response->assertSee('Manajemen User');
     }
 
-    public function test_branch_user_cannot_access_user_management(): void
+    public function test_branch_admin_cannot_access_user_management(): void
     {
         $branch = Branch::create([
             'name' => 'Cabang A',
@@ -58,19 +58,19 @@ class LogisticsAppTest extends TestCase
         ]);
 
         $user = User::create([
-            'name' => 'User Cabang',
+            'name' => 'Admin Cabang',
             'email' => 'branch-user@test.local',
             'password' => 'password',
-            'role' => User::ROLE_USER_CABANG,
+            'role' => User::ROLE_ADMIN_CABANG,
             'branch_id' => $branch->id,
         ]);
 
-        $response = $this->actingAs($user)->get('/users');
+        $response = $this->actingAs($user)->get(route('superadmin.users.index'));
 
         $response->assertForbidden();
     }
 
-    public function test_branch_user_only_sees_own_branch_logistics(): void
+    public function test_branch_admin_only_sees_own_branch_logistics(): void
     {
         $branchA = Branch::create([
             'name' => 'Cabang A',
@@ -85,10 +85,10 @@ class LogisticsAppTest extends TestCase
         ]);
 
         $user = User::create([
-            'name' => 'User Cabang',
+            'name' => 'Admin Cabang',
             'email' => 'user@test.local',
             'password' => 'password',
-            'role' => 'user_cabang',
+            'role' => User::ROLE_ADMIN_CABANG,
             'branch_id' => $branchA->id,
         ]);
 
@@ -114,7 +114,7 @@ class LogisticsAppTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->get('/logistics');
+        $response = $this->actingAs($user)->get(route('admin.logistics.index'));
 
         $response->assertOk();
         $response->assertSee('Barang Cabang A');

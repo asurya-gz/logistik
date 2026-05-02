@@ -49,7 +49,7 @@ class UserController extends Controller
             'branch_id' => $this->resolveBranchId($data),
         ]);
 
-        return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
+        return redirect()->route('superadmin.users.index')->with('success', 'User berhasil ditambahkan.');
     }
 
     /**
@@ -57,7 +57,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return redirect()->route('users.edit', $user);
+        return redirect()->route('superadmin.users.edit', $user);
     }
 
     /**
@@ -93,7 +93,7 @@ class UserController extends Controller
 
         $user->update($payload);
 
-        return redirect()->route('users.index')->with('success', 'User berhasil diperbarui.');
+        return redirect()->route('superadmin.users.index')->with('success', 'User berhasil diperbarui.');
     }
 
     /**
@@ -107,7 +107,7 @@ class UserController extends Controller
 
         $user->delete();
 
-        return redirect()->route('users.index')->with('success', 'User berhasil dihapus.');
+        return redirect()->route('superadmin.users.index')->with('success', 'User berhasil dihapus.');
     }
 
     private function validatedData(Request $request, ?User $user = null): array
@@ -126,7 +126,7 @@ class UserController extends Controller
 
         if ($data['role'] !== User::ROLE_SUPER_ADMIN && empty($data['branch_id'])) {
             throw ValidationException::withMessages([
-                'branch_id' => 'Cabang wajib dipilih untuk admin cabang atau user cabang.',
+                'branch_id' => 'Cabang wajib dipilih untuk admin cabang.',
             ]);
         }
 

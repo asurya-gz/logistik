@@ -66,7 +66,7 @@ class LogisticsController extends Controller
 
         Logistics::create($data);
 
-        return redirect()->route('logistics.index')->with('success', 'Data logistik berhasil ditambahkan.');
+        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Data logistik berhasil ditambahkan.');
     }
 
     /**
@@ -74,7 +74,7 @@ class LogisticsController extends Controller
      */
     public function show(Logistics $logistics)
     {
-        return redirect()->route('logistics.edit', $logistics);
+        return redirect()->route($request->user()->panelRouteName('logistics.edit'), $logistics);
     }
 
     /**
@@ -110,7 +110,7 @@ class LogisticsController extends Controller
 
         $logistics->update($data);
 
-        return redirect()->route('logistics.index')->with('success', 'Data logistik berhasil diperbarui.');
+        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Data logistik berhasil diperbarui.');
     }
 
     /**
@@ -126,7 +126,7 @@ class LogisticsController extends Controller
 
         $logistics->delete();
 
-        return redirect()->route('logistics.index')->with('success', 'Data logistik berhasil dihapus.');
+        return redirect()->route($request->user()->panelRouteName('logistics.index'))->with('success', 'Data logistik berhasil dihapus.');
     }
 
     private function validatedData(Request $request, $user): array

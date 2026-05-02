@@ -1,7 +1,7 @@
 <x-layouts.app :title="$mode === 'create' ? 'Tambah Logistik' : 'Edit Logistik'">
     <div class="card">
         <h2>{{ $mode === 'create' ? 'Tambah Data Logistik' : 'Edit Data Logistik' }}</h2>
-        <form method="POST" action="{{ $mode === 'create' ? route('logistics.store') : route('logistics.update', $item) }}" class="form-grid">
+        <form method="POST" action="{{ $mode === 'create' ? route(auth()->user()->panelRouteName('logistics.store')) : route(auth()->user()->panelRouteName('logistics.update'), $item) }}" class="form-grid">
             @csrf
             @if ($mode === 'edit') @method('PUT') @endif
 
@@ -48,7 +48,7 @@
             </div>
             <div class="actions">
                 <button class="button button-primary" type="submit">Simpan</button>
-                <a class="button" href="{{ route('logistics.index') }}">Batal</a>
+                <a class="button" href="{{ route(auth()->user()->panelRouteName('logistics.index')) }}">Batal</a>
             </div>
         </form>
     </div>

@@ -17,26 +17,28 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/dashboard', function () {
+        return redirect()->route(request()->user()->dashboardRouteName());
+    })->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
 
+Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::resource('logistics', LogisticsController::class)->except('show');
-
     Route::get('/uploads', [UploadController::class, 'index'])->name('uploads.index');
     Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
+    Route::get('/verifications', [VerificationController::class, 'index'])->name('verifications.index');
+    Route::patch('/verifications/{logistics}', [VerificationController::class, 'update'])->name('verifications.update');
+    Route::resource('branches', BranchController::class)->except('show');
+    Route::resource('users', UserController::class)->except('show');
+});
 
-    Route::get('/verifications', [VerificationController::class, 'index'])
-        ->middleware('role:admin_cabang,super_admin')
-        ->name('verifications.index');
-    Route::patch('/verifications/{logistics}', [VerificationController::class, 'update'])
-        ->middleware('role:admin_cabang,super_admin')
-        ->name('verifications.update');
-
-    Route::resource('branches', BranchController::class)
-        ->middleware('role:super_admin')
-        ->except('show');
-
-    Route::resource('users', UserController::class)
-        ->middleware('role:super_admin')
-        ->except('show');
+Route::middleware(['auth', 'role:admin_cabang'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::resource('logistics', LogisticsController::class)->except('show');
+    Route::get('/uploads', [UploadController::class, 'index'])->name('uploads.index');
+    Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
+    Route::get('/verifications', [VerificationController::class, 'index'])->name('verifications.index');
+    Route::patch('/verifications/{logistics}', [VerificationController::class, 'update'])->name('verifications.update');
 });

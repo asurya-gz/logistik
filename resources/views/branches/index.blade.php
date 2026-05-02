@@ -5,7 +5,7 @@
                 <h2>Manajemen Cabang</h2>
                 <p class="muted">Hanya super admin yang dapat menambah, mengubah, dan menghapus cabang.</p>
             </div>
-            <a class="button button-primary" href="{{ route('branches.create') }}">Tambah Cabang</a>
+            <a class="button button-primary" href="{{ route('superadmin.branches.create') }}">Tambah Cabang</a>
         </div>
 
         <table>
@@ -29,8 +29,8 @@
                         <td>{{ $branch->logistics_count }}</td>
                         <td>
                             <div class="actions">
-                                <a class="button" href="{{ route('branches.edit', $branch) }}">Edit</a>
-                                <form class="inline" method="POST" action="{{ route('branches.destroy', $branch) }}">
+                                <a class="button" href="{{ route('superadmin.branches.edit', $branch) }}">Edit</a>
+                                <form class="inline" method="POST" action="{{ route('superadmin.branches.destroy', $branch) }}">
                                     @csrf
                                     @method('DELETE')
                                     <button class="button" type="submit" onclick="return confirm('Hapus cabang ini?')">Hapus</button>

@@ -41,7 +41,7 @@
                         <td>{{ $item->jumlah }}</td>
                         <td>{{ $item->tanggal->format('d M Y') }}</td>
                         <td>
-                            <form method="POST" action="{{ route('verifications.update', $item) }}" class="form-grid">
+                            <form method="POST" action="{{ route(auth()->user()->panelRouteName('verifications.update'), $item) }}" class="form-grid">
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="status" value="rejected">
@@ -51,7 +51,7 @@
                         </td>
                         <td>
                             <div class="actions">
-                                <form class="inline" method="POST" action="{{ route('verifications.update', $item) }}">
+                                <form class="inline" method="POST" action="{{ route(auth()->user()->panelRouteName('verifications.update'), $item) }}">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="status" value="approved">

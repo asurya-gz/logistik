@@ -3,9 +3,9 @@
         <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;">
             <div>
                 <h2>Manajemen User</h2>
-                <p class="muted">Kelola akun super admin, admin cabang, dan user cabang dari satu tempat.</p>
+                <p class="muted">Kelola akun super admin dan admin cabang dari satu tempat.</p>
             </div>
-            <a class="button button-primary" href="{{ route('users.create') }}">Tambah User</a>
+            <a class="button button-primary" href="{{ route('superadmin.users.create') }}">Tambah User</a>
         </div>
 
         <table>
@@ -27,8 +27,8 @@
                         <td>{{ $user->branch?->name ?: '-' }}</td>
                         <td>
                             <div class="actions">
-                                <a class="button" href="{{ route('users.edit', $user) }}">Edit</a>
-                                <form class="inline" method="POST" action="{{ route('users.destroy', $user) }}">
+                                <a class="button" href="{{ route('superadmin.users.edit', $user) }}">Edit</a>
+                                <form class="inline" method="POST" action="{{ route('superadmin.users.destroy', $user) }}">
                                     @csrf
                                     @method('DELETE')
                                     <button class="button" type="submit" onclick="return confirm('Hapus user ini?')">Hapus</button>

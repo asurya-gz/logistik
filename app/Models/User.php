@@ -16,7 +16,6 @@ class User extends Authenticatable
 
     public const ROLE_SUPER_ADMIN = 'super_admin';
     public const ROLE_ADMIN_CABANG = 'admin_cabang';
-    public const ROLE_USER_CABANG = 'user_cabang';
 
     protected $fillable = [
         'name',
@@ -79,12 +78,28 @@ class User extends Authenticatable
         return in_array($this->role, [self::ROLE_ADMIN_CABANG, self::ROLE_SUPER_ADMIN], true);
     }
 
+    public function dashboardRouteName(): string
+    {
+        return $this->isSuperAdmin()
+            ? 'superadmin.dashboard'
+            : 'admin.dashboard';
+    }
+
+    public function routePrefix(): string
+    {
+        return $this->isSuperAdmin() ? 'superadmin' : 'admin';
+    }
+
+    public function panelRouteName(string $route): string
+    {
+        return "{$this->routePrefix()}.{$route}";
+    }
+
     public static function roleOptions(): array
     {
         return [
             self::ROLE_SUPER_ADMIN => 'Super Admin',
             self::ROLE_ADMIN_CABANG => 'Admin Cabang',
-            self::ROLE_USER_CABANG => 'User Cabang',
         ];
     }
 }

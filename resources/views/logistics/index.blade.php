@@ -3,9 +3,9 @@
         <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;">
             <div>
                 <h2>Data Logistik</h2>
-                <p class="muted">User cabang hanya melihat datanya sendiri. Super admin dapat melihat seluruh cabang.</p>
+                <p class="muted">Admin cabang hanya melihat data cabangnya sendiri. Super admin dapat melihat seluruh cabang.</p>
             </div>
-            <a class="button button-primary" href="{{ route('logistics.create') }}">Tambah Data</a>
+            <a class="button button-primary" href="{{ route(auth()->user()->panelRouteName('logistics.create')) }}">Tambah Data</a>
         </div>
 
         <form method="GET" class="toolbar" style="margin:1rem 0;">
@@ -59,8 +59,8 @@
                         <td>{{ $item->keterangan ?: '-' }}</td>
                         <td>
                             <div class="actions">
-                                <a class="button" href="{{ route('logistics.edit', $item) }}">Edit</a>
-                                <form class="inline" method="POST" action="{{ route('logistics.destroy', $item) }}">
+                                <a class="button" href="{{ route(auth()->user()->panelRouteName('logistics.edit'), $item) }}">Edit</a>
+                                <form class="inline" method="POST" action="{{ route(auth()->user()->panelRouteName('logistics.destroy'), $item) }}">
                                     @csrf
                                     @method('DELETE')
                                     <button class="button" type="submit" onclick="return confirm('Hapus data ini?')">Hapus</button>

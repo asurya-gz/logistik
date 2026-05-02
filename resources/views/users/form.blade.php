@@ -1,7 +1,7 @@
 <x-layouts.app :title="$mode === 'create' ? 'Tambah User' : 'Edit User'">
     <div class="card">
         <h2>{{ $mode === 'create' ? 'Tambah User' : 'Edit User' }}</h2>
-        <form method="POST" action="{{ $mode === 'create' ? route('users.store') : route('users.update', $userModel) }}" class="form-grid">
+        <form method="POST" action="{{ $mode === 'create' ? route('superadmin.users.store') : route('superadmin.users.update', $userModel) }}" class="form-grid">
             @csrf
             @if ($mode === 'edit') @method('PUT') @endif
 
@@ -20,7 +20,7 @@
                     <label for="role">Role</label>
                     <select id="role" name="role" required>
                         @foreach ($roles as $value => $label)
-                            <option value="{{ $value }}" @selected(old('role', $userModel->role ?: \App\Models\User::ROLE_USER_CABANG) === $value)>{{ $label }}</option>
+                            <option value="{{ $value }}" @selected(old('role', $userModel->role ?: \App\Models\User::ROLE_ADMIN_CABANG) === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                     @error('role') <div class="error-text">{{ $message }}</div> @enderror
@@ -43,7 +43,7 @@
             </div>
             <div class="actions">
                 <button class="button button-primary" type="submit">Simpan</button>
-                <a class="button" href="{{ route('users.index') }}">Batal</a>
+                <a class="button" href="{{ route('superadmin.users.index') }}">Batal</a>
             </div>
         </form>
     </div>

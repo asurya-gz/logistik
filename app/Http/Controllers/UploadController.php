@@ -81,7 +81,7 @@ class UploadController extends Controller
             ]);
         });
 
-        return redirect()->route('uploads.index')->with('success', 'File berhasil diunggah dan diproses.');
+        return redirect()->route($user->panelRouteName('uploads.index'))->with('success', 'File berhasil diunggah dan diproses.');
     }
 
     private function parseSpreadsheet(string $path): array

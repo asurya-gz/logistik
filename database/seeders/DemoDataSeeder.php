@@ -42,14 +42,6 @@ class DemoDataSeeder extends Seeder
             'branch_id' => $jakarta->id,
         ]);
 
-        $branchUser = User::create([
-            'name' => 'User Jakarta',
-            'email' => 'user.jakarta@logistik.test',
-            'password' => 'password',
-            'role' => 'user_cabang',
-            'branch_id' => $jakarta->id,
-        ]);
-
         Logistics::insert([
             [
                 'nama_barang' => 'Laptop Operasional',
@@ -59,7 +51,7 @@ class DemoDataSeeder extends Seeder
                 'keterangan' => 'Pengadaan awal pelatihan',
                 'status' => 'approved',
                 'branch_id' => $jakarta->id,
-                'created_by' => $branchUser->id,
+                'created_by' => $branchAdmin->id,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

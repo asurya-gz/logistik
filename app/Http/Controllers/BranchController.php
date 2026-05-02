@@ -42,7 +42,7 @@ class BranchController extends Controller
 
         Branch::create($data);
 
-        return redirect()->route('branches.index')->with('success', 'Cabang berhasil ditambahkan.');
+        return redirect()->route('superadmin.branches.index')->with('success', 'Cabang berhasil ditambahkan.');
     }
 
     /**
@@ -50,7 +50,7 @@ class BranchController extends Controller
      */
     public function show(Branch $branch)
     {
-        return redirect()->route('branches.edit', $branch);
+        return redirect()->route('superadmin.branches.edit', $branch);
     }
 
     /**
@@ -77,7 +77,7 @@ class BranchController extends Controller
 
         $branch->update($data);
 
-        return redirect()->route('branches.index')->with('success', 'Cabang berhasil diperbarui.');
+        return redirect()->route('superadmin.branches.index')->with('success', 'Cabang berhasil diperbarui.');
     }
 
     /**
@@ -91,6 +91,6 @@ class BranchController extends Controller
 
         $branch->delete();
 
-        return redirect()->route('branches.index')->with('success', 'Cabang berhasil dihapus.');
+        return redirect()->route('superadmin.branches.index')->with('success', 'Cabang berhasil dihapus.');
     }
 }
