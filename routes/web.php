@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FieldReportController;
 use App\Http\Controllers\LogisticsController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
@@ -10,6 +11,12 @@ use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
+
+Route::get('/lapangan', [FieldReportController::class, 'showIdentityForm'])->name('field-reports.identity');
+Route::post('/lapangan', [FieldReportController::class, 'verifyIdentity'])->name('field-reports.verify');
+Route::get('/lapangan/form', [FieldReportController::class, 'create'])->name('field-reports.create');
+Route::post('/lapangan/form', [FieldReportController::class, 'store'])->name('field-reports.store');
+Route::post('/lapangan/logout', [FieldReportController::class, 'destroySession'])->name('field-reports.logout');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

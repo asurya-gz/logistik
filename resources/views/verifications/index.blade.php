@@ -20,51 +20,53 @@
             </div>
         </form>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Barang</th>
-                    <th>Cabang</th>
-                    <th>Kategori</th>
-                    <th>Jumlah</th>
-                    <th>Tanggal</th>
-                    <th>Catatan Reject</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($items as $item)
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ $item->nama_barang }}</td>
-                        <td>{{ $item->branch->name }}</td>
-                        <td>{{ ucfirst($item->kategori) }}</td>
-                        <td>{{ $item->jumlah }}</td>
-                        <td>{{ $item->tanggal->format('d M Y') }}</td>
-                        <td>
-                            <form method="POST" action="{{ route(auth()->user()->panelRouteName('verifications.update'), $item) }}" class="form-grid">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="rejected">
-                                <textarea name="note" placeholder="Wajib diisi jika reject"></textarea>
-                                <button class="button" type="submit">Reject</button>
-                            </form>
-                        </td>
-                        <td>
-                            <div class="actions">
-                                <form class="inline" method="POST" action="{{ route(auth()->user()->panelRouteName('verifications.update'), $item) }}">
+                        <th>Barang</th>
+                        <th>Cabang</th>
+                        <th>Kategori</th>
+                        <th>Jumlah</th>
+                        <th>Tanggal</th>
+                        <th>Catatan Reject</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($items as $item)
+                        <tr>
+                            <td>{{ $item->nama_barang }}</td>
+                            <td>{{ $item->branch->name }}</td>
+                            <td>{{ ucfirst($item->kategori) }}</td>
+                            <td>{{ $item->jumlah }}</td>
+                            <td>{{ $item->tanggal->format('d M Y') }}</td>
+                            <td>
+                                <form method="POST" action="{{ route(auth()->user()->panelRouteName('verifications.update'), $item) }}" class="form-grid">
                                     @csrf
                                     @method('PATCH')
-                                    <input type="hidden" name="status" value="approved">
-                                    <button class="button button-primary" type="submit">Approve</button>
+                                    <input type="hidden" name="status" value="rejected">
+                                    <textarea name="note" placeholder="Wajib diisi jika reject"></textarea>
+                                    <button class="button" type="submit">Reject</button>
                                 </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="7"><div class="empty">Tidak ada data pending.</div></td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <form class="inline" method="POST" action="{{ route(auth()->user()->panelRouteName('verifications.update'), $item) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="approved">
+                                        <button class="button button-primary" type="submit">Approve</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7"><div class="empty">Tidak ada data pending.</div></td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         <div class="pagination">{{ $items->links() }}</div>
     </div>
 </x-layouts.app>

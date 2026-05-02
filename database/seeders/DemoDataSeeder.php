@@ -32,6 +32,7 @@ class DemoDataSeeder extends Seeder
             'email' => 'kantor@logistik.test',
             'password' => 'password',
             'role' => User::ROLE_KANTOR,
+            'identity_number' => null,
         ]);
 
         $logisticsManager = User::create([
@@ -39,6 +40,7 @@ class DemoDataSeeder extends Seeder
             'email' => 'logistik.jakarta@logistik.test',
             'password' => 'password',
             'role' => User::ROLE_LOGISTIK,
+            'identity_number' => null,
             'branch_id' => $jakarta->id,
         ]);
 
@@ -47,6 +49,7 @@ class DemoDataSeeder extends Seeder
             'email' => 'lapangan.jakarta@logistik.test',
             'password' => 'password',
             'role' => User::ROLE_LAPANGAN,
+            'identity_number' => 'LPG-JKT-001',
             'branch_id' => $jakarta->id,
         ]);
 

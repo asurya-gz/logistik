@@ -26,28 +26,30 @@
         </div>
         <div class="card">
             <h2>Riwayat Upload</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>File</th>
-                        <th>Cabang</th>
-                        <th>Baris</th>
-                        <th>Waktu</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($uploads as $upload)
+            <div class="table-wrap">
+                <table>
+                    <thead>
                         <tr>
-                            <td>{{ $upload->file_name }}</td>
-                            <td>{{ $upload->branch->name }}</td>
-                            <td>{{ $upload->total_rows }}</td>
-                            <td>{{ $upload->tanggal_upload->format('d M Y H:i') }}</td>
+                            <th>File</th>
+                            <th>Cabang</th>
+                            <th>Baris</th>
+                            <th>Waktu</th>
                         </tr>
-                    @empty
-                        <tr><td colspan="4"><div class="empty">Belum ada riwayat upload.</div></td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @forelse ($uploads as $upload)
+                            <tr>
+                                <td>{{ $upload->file_name }}</td>
+                                <td>{{ $upload->branch->name }}</td>
+                                <td>{{ $upload->total_rows }}</td>
+                                <td>{{ $upload->tanggal_upload->format('d M Y H:i') }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4"><div class="empty">Belum ada riwayat upload.</div></td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
             <div class="pagination">{{ $uploads->links() }}</div>
         </div>
     </div>

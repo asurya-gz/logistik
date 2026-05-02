@@ -99,6 +99,11 @@
                         Masuk ke Dashboard
                     </button>
                 </form>
+
+                <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                    Petugas lapangan tidak perlu login.
+                    <a href="{{ route('field-reports.identity') }}" class="font-medium text-slate-900 underline underline-offset-4">Buka form lapangan lewat nomor identitas</a>.
+                </div>
             </div>
 
             {{-- Demo accounts --}}
@@ -108,7 +113,6 @@
                     @foreach ([
                         ['role' => 'M. Kantor',      'email' => 'kantor@logistik.test'],
                         ['role' => 'Officer / M. Logistik', 'email' => 'logistik.jakarta@logistik.test'],
-                        ['role' => 'M. Lapangan',    'email' => 'lapangan.jakarta@logistik.test'],
                     ] as $account)
                         <div class="flex items-center justify-between text-xs">
                             <span class="text-slate-500 w-28 shrink-0">{{ $account['role'] }}</span>
@@ -120,6 +124,9 @@
                             </code>
                         </div>
                     @endforeach
+                </div>
+                <div class="mt-4 border-t border-slate-200 pt-3 text-xs text-slate-500">
+                    Demo akses lapangan via nomor identitas: <code class="text-slate-700">LPG-JKT-001</code>
                 </div>
             </div>
 

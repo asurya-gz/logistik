@@ -61,6 +61,8 @@
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: .85rem .75rem; border-bottom: 1px solid rgba(31,41,55,.08); text-align: left; vertical-align: top; }
         th { color: var(--muted); font-size: .86rem; text-transform: uppercase; letter-spacing: .04em; }
+        .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-wrap table { min-width: 720px; }
         form.inline { display: inline; }
         .toolbar, .form-grid { display: grid; gap: 1rem; }
         .toolbar { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; }
@@ -110,6 +112,12 @@
             .auth-panel, .auth-card { padding: 1.5rem; }
             .auth-panel h1 { font-size: 2.5rem; }
             .auth-options, .auth-meta { flex-direction: column; align-items: flex-start; }
+        }
+        @media (max-width: 640px) {
+            .card { padding: 1rem; border-radius: 18px; }
+            th, td { padding: .75rem .65rem; }
+            .toolbar { grid-template-columns: 1fr; }
+            .pagination { justify-content: flex-start; overflow-x: auto; }
         }
     </style>
 </head>

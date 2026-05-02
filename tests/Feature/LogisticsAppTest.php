@@ -138,15 +138,20 @@ class LogisticsAppTest extends TestCase
             'email' => 'lapangan@test.local',
             'password' => 'password',
             'role' => User::ROLE_LAPANGAN,
+            'identity_number' => 'LPG-001',
             'branch_id' => $branch->id,
         ]);
 
-        $response = $this->actingAs($user)->post(route('admin.logistics.store'), [
+        $this->post(route('field-reports.verify'), [
+            'identity_number' => 'LPG-001',
+        ])->assertRedirect(route('field-reports.create'));
+
+        $response = $this->post(route('field-reports.store'), [
             'keterangan' => 'Foto kondisi barang sudah diunggah dari lokasi.',
             'photo' => UploadedFile::fake()->image('lapangan.jpg'),
         ]);
 
-        $response->assertRedirect(route('admin.logistics.index'));
+        $response->assertRedirect(route('field-reports.create'));
 
         $this->assertDatabaseHas('logistics', [
             'created_by' => $user->id,
@@ -169,6 +174,7 @@ class LogisticsAppTest extends TestCase
             'email' => 'lapangan-note@test.local',
             'password' => 'password',
             'role' => User::ROLE_LAPANGAN,
+            'identity_number' => 'LPG-002',
             'branch_id' => $branch->id,
         ]);
 
@@ -202,5 +208,14 @@ class LogisticsAppTest extends TestCase
             'office_note' => 'Mohon kirim update susulan besok pagi.',
             'keterangan' => 'Dokumentasi lapangan awal.',
         ]);
+    }
+
+    public function test_unknown_identity_cannot_open_field_form(): void
+    {
+        $response = $this->post(route('field-reports.verify'), [
+            'identity_number' => 'UNKNOWN-001',
+        ]);
+
+        $response->assertSessionHasErrors('identity_number');
     }
 }

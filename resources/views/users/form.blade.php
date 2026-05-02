@@ -26,6 +26,11 @@
                     @error('role') <div class="error-text">{{ $message }}</div> @enderror
                 </div>
                 <div>
+                    <label for="identity_number">Nomor Identitas Lapangan</label>
+                    <input id="identity_number" name="identity_number" value="{{ old('identity_number', $userModel->identity_number) }}" placeholder="Wajib untuk M. Lapangan">
+                    @error('identity_number') <div class="error-text">{{ $message }}</div> @enderror
+                </div>
+                <div>
                     <label for="branch_id">Cabang</label>
                     <select id="branch_id" name="branch_id">
                         <option value="">Tanpa cabang</option>

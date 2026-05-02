@@ -34,69 +34,71 @@
             </div>
         </form>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Pelapor</th>
-                    <th>Foto</th>
-                    <th>Tanggal</th>
-                    <th>Cabang</th>
-                    <th>Status</th>
-                    <th>Keterangan Lapangan</th>
-                    <th>Catatan</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($items as $item)
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <td>
-                            <div>{{ $item->creator?->name ?? $item->nama_barang }}</div>
-                            <div class="muted" style="font-size:.85rem;">{{ $item->nama_barang }}</div>
-                        </td>
-                        <td>
-                            @if ($item->photo_path)
-                                <a href="{{ \Illuminate\Support\Facades\Storage::url($item->photo_path) }}" target="_blank">Lihat foto</a>
-                            @else
-                                <span class="muted">Tidak ada</span>
-                            @endif
-                        </td>
-                        <td>{{ $item->tanggal->format('d M Y') }}</td>
-                        <td>{{ $item->branch->name }}</td>
-                        <td><x-status-badge :status="$item->status" /></td>
-                        <td>{{ $item->keterangan ?: '-' }}</td>
-                        <td style="min-width:220px;">
-                            @if ($user->canAddOfficeNote())
-                                <form method="POST" action="{{ route(auth()->user()->panelRouteName('logistics.office-note'), $item) }}" class="form-grid">
-                                    @csrf
-                                    @method('PATCH')
-                                    <textarea name="office_note" placeholder="Tambahkan catatan">{{ old('office_note', $item->office_note) }}</textarea>
-                                    <button class="button" type="submit">Simpan Catatan</button>
-                                </form>
-                            @else
-                                {{ $item->office_note ?: '-' }}
-                            @endif
-                        </td>
-                        <td>
-                            <div class="actions">
-                                @if ($user->canEditInformation())
-                                    <a class="button" href="{{ route(auth()->user()->panelRouteName('logistics.edit'), $item) }}">Edit</a>
-                                    <form class="inline" method="POST" action="{{ route(auth()->user()->panelRouteName('logistics.destroy'), $item) }}">
+                        <th>Pelapor</th>
+                        <th>Foto</th>
+                        <th>Tanggal</th>
+                        <th>Cabang</th>
+                        <th>Status</th>
+                        <th>Keterangan Lapangan</th>
+                        <th>Catatan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($items as $item)
+                        <tr>
+                            <td>
+                                <div>{{ $item->creator?->name ?? $item->nama_barang }}</div>
+                                <div class="muted" style="font-size:.85rem;">{{ $item->nama_barang }}</div>
+                            </td>
+                            <td>
+                                @if ($item->photo_path)
+                                    <a href="{{ \Illuminate\Support\Facades\Storage::url($item->photo_path) }}" target="_blank">Lihat foto</a>
+                                @else
+                                    <span class="muted">Tidak ada</span>
+                                @endif
+                            </td>
+                            <td>{{ $item->tanggal->format('d M Y') }}</td>
+                            <td>{{ $item->branch->name }}</td>
+                            <td><x-status-badge :status="$item->status" /></td>
+                            <td>{{ $item->keterangan ?: '-' }}</td>
+                            <td style="min-width:220px;">
+                                @if ($user->canAddOfficeNote())
+                                    <form method="POST" action="{{ route(auth()->user()->panelRouteName('logistics.office-note'), $item) }}" class="form-grid">
                                         @csrf
-                                        @method('DELETE')
-                                        <button class="button" type="submit" onclick="return confirm('Hapus data ini?')">Hapus</button>
+                                        @method('PATCH')
+                                        <textarea name="office_note" placeholder="Tambahkan catatan">{{ old('office_note', $item->office_note) }}</textarea>
+                                        <button class="button" type="submit">Simpan Catatan</button>
                                     </form>
                                 @else
-                                    <span class="muted">Hanya lihat</span>
+                                    {{ $item->office_note ?: '-' }}
                                 @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="8"><div class="empty">Belum ada informasi lapangan.</div></td></tr>
-                @endforelse
-            </tbody>
-        </table>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    @if ($user->canEditInformation())
+                                        <a class="button" href="{{ route(auth()->user()->panelRouteName('logistics.edit'), $item) }}">Edit</a>
+                                        <form class="inline" method="POST" action="{{ route(auth()->user()->panelRouteName('logistics.destroy'), $item) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="button" type="submit" onclick="return confirm('Hapus data ini?')">Hapus</button>
+                                        </form>
+                                    @else
+                                        <span class="muted">Hanya lihat</span>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8"><div class="empty">Belum ada informasi lapangan.</div></td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
         <div class="pagination">{{ $items->links() }}</div>
     </div>
 </x-layouts.app>

@@ -1,5 +1,5 @@
 <x-layouts.app :title="'Dashboard'">
-    <div class="space-y-6 p-6">
+    <div class="space-y-6 p-4 sm:p-6">
 
         {{-- Hero --}}
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
@@ -40,13 +40,13 @@
                     @endif
                     <button
                         type="submit"
-                        class="text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 active:bg-slate-950 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                        class="w-full sm:w-auto text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 active:bg-slate-950 px-4 py-2 rounded-lg transition-colors cursor-pointer"
                     >
                         Terapkan
                     </button>
                     <a
                         href="{{ route(auth()->user()->panelRouteName('logistics.create')) }}"
-                        class="text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-4 py-2 rounded-lg transition-colors"
+                        class="w-full sm:w-auto text-center text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-4 py-2 rounded-lg transition-colors"
                     >
                         + Upload Informasi
                     </a>

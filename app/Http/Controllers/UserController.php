@@ -46,6 +46,7 @@ class UserController extends Controller
             'email' => $data['email'],
             'password' => $data['password'],
             'role' => $data['role'],
+            'identity_number' => $data['identity_number'] ?: null,
             'branch_id' => $this->resolveBranchId($data),
         ]);
 
@@ -84,6 +85,7 @@ class UserController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'role' => $data['role'],
+            'identity_number' => $data['identity_number'] ?: null,
             'branch_id' => $this->resolveBranchId($data),
         ];
 
@@ -121,12 +123,19 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'password' => $passwordRules,
             'role' => ['required', Rule::in(array_keys(User::roleOptions()))],
+            'identity_number' => ['nullable', 'string', 'max:255', Rule::unique('users', 'identity_number')->ignore($user?->id)],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
         ]);
 
         if ($data['role'] !== User::ROLE_KANTOR && empty($data['branch_id'])) {
             throw ValidationException::withMessages([
                 'branch_id' => 'Cabang wajib dipilih untuk role selain M. Kantor.',
+            ]);
+        }
+
+        if ($data['role'] === User::ROLE_LAPANGAN && empty($data['identity_number'])) {
+            throw ValidationException::withMessages([
+                'identity_number' => 'Nomor identitas wajib diisi untuk M. Lapangan.',
             ]);
         }
 
