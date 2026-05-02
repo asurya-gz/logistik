@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Branch;
 use App\Models\Logistics;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class LogisticsController extends Controller
@@ -59,20 +60,24 @@ class LogisticsController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        $data = $this->validatedData($request, $user);
-        $data['branch_id'] = $user->isSuperAdmin() ? $data['branch_id'] : $user->branch_id;
+        $data = $this->validatedData($request, $user, true);
+        $data['branch_id'] = $user->isFullAccess() ? ($data['branch_id'] ?? null) : $user->branch_id;
         $data['created_by'] = $user->id;
         $data['status'] = 'pending';
 
+        if ($request->hasFile('photo')) {
+            $data['photo_path'] = $request->file('photo')->store('logistics-photos', 'public');
+        }
+
         Logistics::create($data);
 
-        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Data logistik berhasil ditambahkan.');
+        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Informasi lapangan berhasil ditambahkan.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Logistics $logistics)
+    public function show(Request $request, Logistics $logistics)
     {
         return redirect()->route($request->user()->panelRouteName('logistics.edit'), $logistics);
     }
@@ -83,6 +88,10 @@ class LogisticsController extends Controller
     public function edit(Request $request, Logistics $logistics)
     {
         $this->authorizeAccess($request->user(), $logistics);
+
+        if (! $request->user()->canEditInformation()) {
+            abort(403);
+        }
 
         return view('logistics.form', [
             'item' => $logistics,
@@ -100,17 +109,25 @@ class LogisticsController extends Controller
         $user = $request->user();
         $this->authorizeAccess($user, $logistics);
 
-        if ($logistics->status === 'approved') {
-            return back()->with('error', 'Data yang sudah disetujui tidak dapat diedit.');
+        if (! $user->canEditInformation()) {
+            abort(403);
         }
 
-        $data = $this->validatedData($request, $user);
-        $data['branch_id'] = $user->isSuperAdmin() ? $data['branch_id'] : $user->branch_id;
+        $data = $this->validatedData($request, $user, false);
+        $data['branch_id'] = $user->isFullAccess() ? ($data['branch_id'] ?? null) : $user->branch_id;
         $data['status'] = 'pending';
+
+        if ($request->hasFile('photo')) {
+            if ($logistics->photo_path) {
+                Storage::disk('public')->delete($logistics->photo_path);
+            }
+
+            $data['photo_path'] = $request->file('photo')->store('logistics-photos', 'public');
+        }
 
         $logistics->update($data);
 
-        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Data logistik berhasil diperbarui.');
+        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Informasi berhasil diperbarui.');
     }
 
     /**
@@ -118,32 +135,70 @@ class LogisticsController extends Controller
      */
     public function destroy(Request $request, Logistics $logistics)
     {
-        $this->authorizeAccess($request->user(), $logistics);
+        $user = $request->user();
+        $this->authorizeAccess($user, $logistics);
 
-        if ($logistics->status === 'approved') {
-            return back()->with('error', 'Data yang sudah disetujui tidak dapat dihapus.');
+        if (! $user->canEditInformation()) {
+            abort(403);
+        }
+
+        if ($logistics->photo_path) {
+            Storage::disk('public')->delete($logistics->photo_path);
         }
 
         $logistics->delete();
 
-        return redirect()->route($request->user()->panelRouteName('logistics.index'))->with('success', 'Data logistik berhasil dihapus.');
+        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Informasi berhasil dihapus.');
     }
 
-    private function validatedData(Request $request, $user): array
+    public function updateOfficeNote(Request $request, Logistics $logistics)
     {
+        $user = $request->user();
+        $this->authorizeAccess($user, $logistics);
+
+        if (! $user->canAddOfficeNote()) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'office_note' => ['nullable', 'string'],
+        ]);
+
+        $logistics->update([
+            'office_note' => $data['office_note'] ?? null,
+        ]);
+
+        return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Catatan berhasil diperbarui.');
+    }
+
+    private function validatedData(Request $request, $user, bool $creating): array
+    {
+        if (! $user->canEditInformation()) {
+            return $request->validate([
+                'keterangan' => ['required', 'string'],
+                'photo' => [$creating ? 'required' : 'nullable', 'image', 'max:4096'],
+            ]) + [
+                'nama_barang' => $user->name,
+                'kategori' => 'masuk',
+                'jumlah' => 1,
+                'tanggal' => now()->toDateString(),
+            ];
+        }
+
         return $request->validate([
             'nama_barang' => ['required', 'string', 'max:255'],
             'kategori' => ['required', 'string', Rule::in(['masuk', 'keluar'])],
             'jumlah' => ['required', 'integer', 'min:1'],
             'tanggal' => ['required', 'date'],
-            'keterangan' => ['nullable', 'string'],
-            'branch_id' => [$user->isSuperAdmin() ? 'required' : 'nullable', 'integer', 'exists:branches,id'],
+            'keterangan' => ['required', 'string'],
+            'photo' => ['nullable', 'image', 'max:4096'],
+            'branch_id' => [$user->isFullAccess() ? 'required' : 'nullable', 'integer', 'exists:branches,id'],
         ]);
     }
 
     private function authorizeAccess($user, Logistics $logistics): void
     {
-        if (! $user->isSuperAdmin() && $user->branch_id !== $logistics->branch_id) {
+        if (! $user->isFullAccess() && $user->branch_id !== $logistics->branch_id) {
             abort(403);
         }
     }

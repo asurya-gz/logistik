@@ -1,11 +1,11 @@
 <x-layouts.app :title="'Upload Data'">
     <div class="grid grid-2">
         <div class="card">
-            <h2>Upload Data Logistik</h2>
-            <p class="muted">Kolom yang didukung: <code>nama_barang</code>, <code>kategori</code>, <code>jumlah</code>, <code>tanggal</code>, <code>keterangan</code>.</p>
+            <h2>Upload Excel</h2>
+            <p class="muted">Fitur ini khusus M. Kantor untuk impor data massal. Kolom yang didukung: <code>nama_barang</code>, <code>kategori</code>, <code>jumlah</code>, <code>tanggal</code>, <code>keterangan</code>.</p>
             <form method="POST" action="{{ route(auth()->user()->panelRouteName('uploads.store')) }}" enctype="multipart/form-data" class="form-grid">
                 @csrf
-                @if ($user->isSuperAdmin())
+                @if ($user->isFullAccess())
                     <div>
                         <label for="branch_id">Cabang</label>
                         <select id="branch_id" name="branch_id" required>

@@ -20,7 +20,7 @@
                     <label for="role">Role</label>
                     <select id="role" name="role" required>
                         @foreach ($roles as $value => $label)
-                            <option value="{{ $value }}" @selected(old('role', $userModel->role ?: \App\Models\User::ROLE_ADMIN_CABANG) === $value)>{{ $label }}</option>
+                            <option value="{{ $value }}" @selected(old('role', $userModel->role ?: \App\Models\User::ROLE_LAPANGAN) === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
                     @error('role') <div class="error-text">{{ $message }}</div> @enderror

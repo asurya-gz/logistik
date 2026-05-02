@@ -3,7 +3,7 @@
         <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;">
             <div>
                 <h2>Manajemen User</h2>
-                <p class="muted">Kelola akun super admin dan admin cabang dari satu tempat.</p>
+                <p class="muted">Kelola akun M. Kantor, Officer / M. Logistik, dan M. Lapangan dari satu tempat.</p>
             </div>
             <a class="button button-primary" href="{{ route('superadmin.users.create') }}">Tambah User</a>
         </div>

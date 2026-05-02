@@ -9,10 +9,10 @@
                     Monitoring Operasional
                 </p>
                 <h1 class="text-2xl font-semibold text-slate-900 leading-snug tracking-tight">
-                    Pantau logistik multi cabang dari satu dashboard.
+                    Pantau informasi lapangan multi cabang dari satu dashboard.
                 </h1>
                 <p class="text-sm text-slate-500 mt-2 leading-relaxed">
-                    Status approval, aktivitas terbaru, dan pergerakan barang masuk versus keluar tersedia dalam satu tampilan.
+                    Informasi terbaru dari lapangan, status tindak lanjut, dan aktivitas operasional tersedia dalam satu tampilan.
                 </p>
             </div>
 
@@ -48,7 +48,7 @@
                         href="{{ route(auth()->user()->panelRouteName('logistics.create')) }}"
                         class="text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-4 py-2 rounded-lg transition-colors"
                     >
-                        + Tambah Logistik
+                        + Upload Informasi
                     </a>
                 </form>
             </div>

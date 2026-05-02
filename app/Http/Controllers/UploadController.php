@@ -15,9 +15,14 @@ class UploadController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
+        if (! $user->canUseExcelUpload()) {
+            abort(403);
+        }
+
         $query = Upload::query()->with(['branch', 'uploader'])->latest('tanggal_upload');
 
-        if (! $user->isSuperAdmin()) {
+        if (! $user->isFullAccess()) {
             $query->where('branch_id', $user->branch_id);
         }
 
@@ -32,12 +37,16 @@ class UploadController extends Controller
     {
         $user = $request->user();
 
+        if (! $user->canUseExcelUpload()) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'file' => ['required', 'file', 'mimes:csv,txt,xls,xlsx'],
-            'branch_id' => [$user->isSuperAdmin() ? 'required' : 'nullable', 'integer', 'exists:branches,id'],
+            'branch_id' => [$user->isFullAccess() ? 'required' : 'nullable', 'integer', 'exists:branches,id'],
         ]);
 
-        $branchId = $user->isSuperAdmin() ? (int) $validated['branch_id'] : $user->branch_id;
+        $branchId = $user->isFullAccess() ? (int) $validated['branch_id'] : $user->branch_id;
         $file = $request->file('file');
         $rows = $this->parseSpreadsheet($file->getRealPath());
 

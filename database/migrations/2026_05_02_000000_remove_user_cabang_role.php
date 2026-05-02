@@ -12,7 +12,7 @@ return new class extends Migration
     {
         DB::table('users')
             ->where('role', 'user_cabang')
-            ->update(['role' => 'admin_cabang']);
+            ->update(['role' => 'lapangan']);
     }
 
     /**

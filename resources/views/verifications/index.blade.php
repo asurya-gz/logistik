@@ -1,10 +1,10 @@
 <x-layouts.app :title="'Verifikasi Data'">
     <div class="card">
         <h2>Verifikasi Data Pending</h2>
-        <p class="muted">Admin cabang melihat data cabangnya, sedangkan super admin dapat melihat seluruh cabang.</p>
+        <p class="muted">Verifikasi ini khusus M. Kantor untuk tindak lanjut akhir atas informasi yang masuk.</p>
 
         <form method="GET" class="toolbar" style="margin:1rem 0;">
-            @if ($user->isSuperAdmin())
+            @if ($user->isFullAccess())
                 <div>
                     <label for="branch_id">Cabang</label>
                     <select id="branch_id" name="branch_id">

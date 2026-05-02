@@ -106,8 +106,9 @@
                 <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Akun Demo</p>
                 <div class="space-y-2">
                     @foreach ([
-                        ['role' => 'Super Admin',    'email' => 'superadmin@logistik.test'],
-                        ['role' => 'Admin Cabang',   'email' => 'admin.jakarta@logistik.test'],
+                        ['role' => 'M. Kantor',      'email' => 'kantor@logistik.test'],
+                        ['role' => 'Officer / M. Logistik', 'email' => 'logistik.jakarta@logistik.test'],
+                        ['role' => 'M. Lapangan',    'email' => 'lapangan.jakarta@logistik.test'],
                     ] as $account)
                         <div class="flex items-center justify-between text-xs">
                             <span class="text-slate-500 w-28 shrink-0">{{ $account['role'] }}</span>

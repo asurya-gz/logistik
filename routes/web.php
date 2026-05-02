@@ -23,9 +23,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
-Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['auth', 'role:kantor'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::resource('logistics', LogisticsController::class)->except('show');
+    Route::patch('/logistics/{logistics}/office-note', [LogisticsController::class, 'updateOfficeNote'])->name('logistics.office-note');
     Route::get('/uploads', [UploadController::class, 'index'])->name('uploads.index');
     Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
     Route::get('/verifications', [VerificationController::class, 'index'])->name('verifications.index');
@@ -34,9 +35,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('superadmin')->name('sup
     Route::resource('users', UserController::class)->except('show');
 });
 
-Route::middleware(['auth', 'role:admin_cabang'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:logistik,lapangan'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::resource('logistics', LogisticsController::class)->except('show');
+    Route::patch('/logistics/{logistics}/office-note', [LogisticsController::class, 'updateOfficeNote'])->name('logistics.office-note');
     Route::get('/uploads', [UploadController::class, 'index'])->name('uploads.index');
     Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
     Route::get('/verifications', [VerificationController::class, 'index'])->name('verifications.index');

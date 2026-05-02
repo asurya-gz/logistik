@@ -15,6 +15,8 @@ class Logistics extends Model
         'jumlah',
         'tanggal',
         'keterangan',
+        'office_note',
+        'photo_path',
         'status',
         'branch_id',
         'created_by',
@@ -44,7 +46,7 @@ class Logistics extends Model
 
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        return $user->isSuperAdmin()
+        return $user->isFullAccess()
             ? $query
             : $query->where('branch_id', $user->branch_id);
     }

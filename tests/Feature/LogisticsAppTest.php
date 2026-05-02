@@ -6,6 +6,8 @@ use App\Models\Branch;
 use App\Models\Logistics;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class LogisticsAppTest extends TestCase
@@ -19,13 +21,13 @@ class LogisticsAppTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_super_admin_can_access_branch_management(): void
+    public function test_kantor_can_access_branch_management(): void
     {
         $user = User::create([
-            'name' => 'Super Admin',
-            'email' => 'super@test.local',
+            'name' => 'Manajemen Kantor',
+            'email' => 'kantor@test.local',
             'password' => 'password',
-            'role' => 'super_admin',
+            'role' => User::ROLE_KANTOR,
         ]);
 
         $response = $this->actingAs($user)->get(route('superadmin.branches.index'));
@@ -34,13 +36,13 @@ class LogisticsAppTest extends TestCase
         $response->assertSee('Manajemen Cabang');
     }
 
-    public function test_super_admin_can_access_user_management(): void
+    public function test_kantor_can_access_user_management(): void
     {
         $user = User::create([
-            'name' => 'Super Admin',
-            'email' => 'super-user@test.local',
+            'name' => 'Manajemen Kantor',
+            'email' => 'kantor-user@test.local',
             'password' => 'password',
-            'role' => User::ROLE_SUPER_ADMIN,
+            'role' => User::ROLE_KANTOR,
         ]);
 
         $response = $this->actingAs($user)->get(route('superadmin.users.index'));
@@ -49,7 +51,7 @@ class LogisticsAppTest extends TestCase
         $response->assertSee('Manajemen User');
     }
 
-    public function test_branch_admin_cannot_access_user_management(): void
+    public function test_logistik_cannot_access_user_management(): void
     {
         $branch = Branch::create([
             'name' => 'Cabang A',
@@ -58,10 +60,10 @@ class LogisticsAppTest extends TestCase
         ]);
 
         $user = User::create([
-            'name' => 'Admin Cabang',
-            'email' => 'branch-user@test.local',
+            'name' => 'Officer Logistik',
+            'email' => 'logistik@test.local',
             'password' => 'password',
-            'role' => User::ROLE_ADMIN_CABANG,
+            'role' => User::ROLE_LOGISTIK,
             'branch_id' => $branch->id,
         ]);
 
@@ -70,7 +72,7 @@ class LogisticsAppTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_branch_admin_only_sees_own_branch_logistics(): void
+    public function test_logistik_only_sees_own_branch_logistics(): void
     {
         $branchA = Branch::create([
             'name' => 'Cabang A',
@@ -85,30 +87,30 @@ class LogisticsAppTest extends TestCase
         ]);
 
         $user = User::create([
-            'name' => 'Admin Cabang',
-            'email' => 'user@test.local',
+            'name' => 'Officer Logistik',
+            'email' => 'logistik-branch@test.local',
             'password' => 'password',
-            'role' => User::ROLE_ADMIN_CABANG,
+            'role' => User::ROLE_LOGISTIK,
             'branch_id' => $branchA->id,
         ]);
 
         Logistics::create([
-            'nama_barang' => 'Barang Cabang A',
+            'nama_barang' => 'Pelapor Cabang A',
             'kategori' => 'masuk',
-            'jumlah' => 3,
+            'jumlah' => 1,
             'tanggal' => now()->toDateString(),
-            'keterangan' => null,
+            'keterangan' => 'Laporan Cabang A',
             'status' => 'pending',
             'branch_id' => $branchA->id,
             'created_by' => $user->id,
         ]);
 
         Logistics::create([
-            'nama_barang' => 'Barang Cabang B',
-            'kategori' => 'keluar',
-            'jumlah' => 2,
+            'nama_barang' => 'Pelapor Cabang B',
+            'kategori' => 'masuk',
+            'jumlah' => 1,
             'tanggal' => now()->toDateString(),
-            'keterangan' => null,
+            'keterangan' => 'Laporan Cabang B',
             'status' => 'pending',
             'branch_id' => $branchB->id,
             'created_by' => $user->id,
@@ -117,7 +119,88 @@ class LogisticsAppTest extends TestCase
         $response = $this->actingAs($user)->get(route('admin.logistics.index'));
 
         $response->assertOk();
-        $response->assertSee('Barang Cabang A');
-        $response->assertDontSee('Barang Cabang B');
+        $response->assertSee('Laporan Cabang A');
+        $response->assertDontSee('Laporan Cabang B');
+    }
+
+    public function test_lapangan_can_submit_simple_information(): void
+    {
+        Storage::fake('public');
+
+        $branch = Branch::create([
+            'name' => 'Cabang A',
+            'code' => 'A1',
+            'address' => 'Alamat A',
+        ]);
+
+        $user = User::create([
+            'name' => 'Petugas Lapangan',
+            'email' => 'lapangan@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_LAPANGAN,
+            'branch_id' => $branch->id,
+        ]);
+
+        $response = $this->actingAs($user)->post(route('admin.logistics.store'), [
+            'keterangan' => 'Foto kondisi barang sudah diunggah dari lokasi.',
+            'photo' => UploadedFile::fake()->image('lapangan.jpg'),
+        ]);
+
+        $response->assertRedirect(route('admin.logistics.index'));
+
+        $this->assertDatabaseHas('logistics', [
+            'created_by' => $user->id,
+            'branch_id' => $branch->id,
+            'nama_barang' => 'Petugas Lapangan',
+            'keterangan' => 'Foto kondisi barang sudah diunggah dari lokasi.',
+        ]);
+    }
+
+    public function test_logistik_can_add_office_note_without_editing_information(): void
+    {
+        $branch = Branch::create([
+            'name' => 'Cabang A',
+            'code' => 'A1',
+            'address' => 'Alamat A',
+        ]);
+
+        $fieldUser = User::create([
+            'name' => 'Petugas Lapangan',
+            'email' => 'lapangan-note@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_LAPANGAN,
+            'branch_id' => $branch->id,
+        ]);
+
+        $logisticsUser = User::create([
+            'name' => 'Officer Logistik',
+            'email' => 'logistik-note@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_LOGISTIK,
+            'branch_id' => $branch->id,
+        ]);
+
+        $item = Logistics::create([
+            'nama_barang' => $fieldUser->name,
+            'kategori' => 'masuk',
+            'jumlah' => 1,
+            'tanggal' => now()->toDateString(),
+            'keterangan' => 'Dokumentasi lapangan awal.',
+            'status' => 'pending',
+            'branch_id' => $branch->id,
+            'created_by' => $fieldUser->id,
+        ]);
+
+        $response = $this->actingAs($logisticsUser)->patch(route('admin.logistics.office-note', $item), [
+            'office_note' => 'Mohon kirim update susulan besok pagi.',
+        ]);
+
+        $response->assertRedirect(route('admin.logistics.index'));
+
+        $this->assertDatabaseHas('logistics', [
+            'id' => $item->id,
+            'office_note' => 'Mohon kirim update susulan besok pagi.',
+            'keterangan' => 'Dokumentasi lapangan awal.',
+        ]);
     }
 }

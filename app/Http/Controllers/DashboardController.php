@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $uploadsQuery = Upload::query()
             ->with(['branch', 'uploader']);
 
-        if (! $user->isSuperAdmin()) {
+        if (! $user->isFullAccess()) {
             $uploadsQuery->where('branch_id', $user->branch_id);
         }
 
@@ -72,7 +72,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'chart' => $chart,
             'recentActivities' => $recentActivities,
-            'isGlobalView' => $user->isSuperAdmin(),
+            'isGlobalView' => $user->isFullAccess(),
         ]);
     }
 }

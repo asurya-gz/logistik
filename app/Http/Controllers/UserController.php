@@ -124,9 +124,9 @@ class UserController extends Controller
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
         ]);
 
-        if ($data['role'] !== User::ROLE_SUPER_ADMIN && empty($data['branch_id'])) {
+        if ($data['role'] !== User::ROLE_KANTOR && empty($data['branch_id'])) {
             throw ValidationException::withMessages([
-                'branch_id' => 'Cabang wajib dipilih untuk admin cabang.',
+                'branch_id' => 'Cabang wajib dipilih untuk role selain M. Kantor.',
             ]);
         }
 
@@ -139,7 +139,7 @@ class UserController extends Controller
 
     private function resolveBranchId(array $data): ?int
     {
-        return $data['role'] === User::ROLE_SUPER_ADMIN
+        return $data['role'] === User::ROLE_KANTOR
             ? null
             : (int) $data['branch_id'];
     }

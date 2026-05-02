@@ -14,6 +14,11 @@ class VerificationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
+        if (! $user->canVerify()) {
+            abort(403);
+        }
+
         $selectedBranchId = $request->integer('branch_id');
 
         $query = Logistics::query()
@@ -21,7 +26,7 @@ class VerificationController extends Controller
             ->where('status', 'pending')
             ->latest('tanggal');
 
-        if (! $user->isSuperAdmin()) {
+        if (! $user->isFullAccess()) {
             $query->where('branch_id', $user->branch_id);
         }
 
@@ -45,7 +50,7 @@ class VerificationController extends Controller
             abort(403);
         }
 
-        if (! $user->isSuperAdmin() && $user->branch_id !== $logistics->branch_id) {
+        if (! $user->isFullAccess() && $user->branch_id !== $logistics->branch_id) {
             abort(403);
         }
 

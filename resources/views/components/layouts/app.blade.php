@@ -125,18 +125,21 @@
                     'icon' => 'dashboard',
                 ],
                 [
-                    'label' => 'Logistik',
+                    'label' => 'Informasi',
                     'route' => route($user->panelRouteName('logistics.index')),
                     'active' => request()->routeIs('*.logistics.*'),
                     'icon' => 'logistics',
                 ],
-                [
-                    'label' => 'Upload',
+            ];
+
+            if ($user->canUseExcelUpload()) {
+                $navItems[] = [
+                    'label' => 'Upload Excel',
                     'route' => route($user->panelRouteName('uploads.index')),
                     'active' => request()->routeIs('*.uploads.*'),
                     'icon' => 'upload',
-                ],
-            ];
+                ];
+            }
 
             if ($user->canVerify()) {
                 $navItems[] = [
@@ -147,13 +150,16 @@
                 ];
             }
 
-            if ($user->isSuperAdmin()) {
+            if ($user->canManageUsers()) {
                 $navItems[] = [
                     'label' => 'User',
                     'route' => route('superadmin.users.index'),
                     'active' => request()->routeIs('superadmin.users.*'),
                     'icon' => 'users',
                 ];
+            }
+
+            if ($user->canManageBranches()) {
                 $navItems[] = [
                     'label' => 'Cabang',
                     'route' => route('superadmin.branches.index'),
