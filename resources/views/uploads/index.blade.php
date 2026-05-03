@@ -2,7 +2,46 @@
     <div class="grid grid-2">
         <div class="card">
             <h2>Upload Excel</h2>
-            <p class="muted">Fitur ini khusus M. Kantor untuk impor data massal. Kolom yang didukung: <code>nama_barang</code>, <code>kategori</code>, <code>jumlah</code>, <code>tanggal</code>, <code>keterangan</code>.</p>
+            <p class="muted">Fitur ini khusus M. Kantor untuk impor data massal. Format terbaru mendukung item, quantity, tanggal transaksi, dan akan otomatis mengambil snapshot harga aktif bila tersedia.</p>
+            <div class="card" style="margin:1rem 0 1.2rem;padding:1rem;border-radius:18px;">
+                <h3 style="margin-bottom:.6rem;">Format Kolom</h3>
+                <p class="muted" style="margin-top:0;">
+                    Kolom yang didukung:
+                    <code>kode_barang</code>,
+                    <code>nama_barang</code>,
+                    <code>kategori</code>,
+                    <code>jumlah</code>,
+                    <code>tanggal</code>,
+                    <code>keterangan</code>.
+                </p>
+                <div class="table-wrap" style="margin-top:.8rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Kode Barang</th>
+                                <th>Nama Barang</th>
+                                <th>Kategori</th>
+                                <th>Jumlah</th>
+                                <th>Tanggal</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>BRG-001</code></td>
+                                <td>Laptop ThinkPad</td>
+                                <td>masuk</td>
+                                <td>5</td>
+                                <td>2026-05-03</td>
+                                <td>Pengiriman batch pagi</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="muted" style="margin:.8rem 0 0;">
+                    Jika <code>kode_barang</code> belum ada di master, sistem akan membuat master barang otomatis dari data upload.
+                </p>
+            </div>
             <form method="POST" action="{{ route(auth()->user()->panelRouteName('uploads.store')) }}" enctype="multipart/form-data" class="form-grid">
                 @csrf
                 @if ($user->isFullAccess())
@@ -26,6 +65,7 @@
         </div>
         <div class="card">
             <h2>Riwayat Upload</h2>
+            <p class="muted">Riwayat berikut mencatat file yang berhasil diproses ke transaksi logistik.</p>
             <div class="table-wrap">
                 <table>
                     <thead>

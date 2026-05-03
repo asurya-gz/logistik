@@ -149,6 +149,24 @@
                 ];
             }
 
+            if ($user->canManageItems()) {
+                $navItems[] = [
+                    'label' => 'Barang',
+                    'route' => route('superadmin.items.index'),
+                    'active' => request()->routeIs('superadmin.items.*'),
+                    'icon' => 'items',
+                ];
+            }
+
+            if ($user->canManagePrices()) {
+                $navItems[] = [
+                    'label' => 'Harga',
+                    'route' => route('superadmin.prices.index'),
+                    'active' => request()->routeIs('superadmin.prices.*'),
+                    'icon' => 'prices',
+                ];
+            }
+
             if ($user->canVerify()) {
                 $navItems[] = [
                     'label' => 'Verifikasi',
@@ -222,6 +240,19 @@
                                                 <path d="M12 16V5"/>
                                                 <path d="m7 10 5-5 5 5"/>
                                                 <path d="M5 19h14"/>
+                                            </svg>
+                                            @break
+                                        @case('items')
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 16V8a2 2 0 0 0-1.1-1.79l-6-3a2 2 0 0 0-1.8 0l-6 3A2 2 0 0 0 5 8v8a2 2 0 0 0 1.1 1.79l6 3a2 2 0 0 0 1.8 0l6-3A2 2 0 0 0 21 16Z"/>
+                                                <path d="m5.27 6.96 6.73 3.37 6.73-3.37"/>
+                                                <path d="M12 10.33V21"/>
+                                            </svg>
+                                            @break
+                                        @case('prices')
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 1v22"/>
+                                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/>
                                             </svg>
                                             @break
                                         @case('verification')

@@ -10,9 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Logistics extends Model
 {
     protected $fillable = [
+        'item_id',
         'nama_barang',
         'kategori',
         'jumlah',
+        'unit_price_snapshot',
+        'total_price',
         'tanggal',
         'keterangan',
         'office_note',
@@ -26,7 +29,14 @@ class Logistics extends Model
     {
         return [
             'tanggal' => 'date',
+            'unit_price_snapshot' => 'decimal:2',
+            'total_price' => 'decimal:2',
         ];
+    }
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class);
     }
 
     public function branch(): BelongsTo
@@ -42,6 +52,11 @@ class Logistics extends Model
     public function verifications(): HasMany
     {
         return $this->hasMany(Verification::class);
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(LogisticsPhoto::class)->orderBy('sort_order');
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder

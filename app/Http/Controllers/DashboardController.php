@@ -15,10 +15,12 @@ class DashboardController extends Controller
         $user = $request->user();
 
         $selectedBranchId = $request->integer('branch_id');
-        $branchOptions = Branch::orderBy('name')->get();
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+        $branchOptions = Branch::query()->orderBy('name')->get();
 
         $logisticsQuery = Logistics::query()
-            ->with(['branch', 'creator'])
+            ->with(['branch', 'creator', 'item'])
             ->visibleTo($user);
 
         $uploadsQuery = Upload::query()
@@ -33,26 +35,78 @@ class DashboardController extends Controller
             $uploadsQuery->where('branch_id', $selectedBranchId);
         }
 
+        if ($dateFrom) {
+            $logisticsQuery->whereDate('tanggal', '>=', $dateFrom);
+            $uploadsQuery->whereDate('tanggal_upload', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $logisticsQuery->whereDate('tanggal', '<=', $dateTo);
+            $uploadsQuery->whereDate('tanggal_upload', '<=', $dateTo);
+        }
+
         $logistics = $logisticsQuery->get();
         $uploads = $uploadsQuery->latest('tanggal_upload')->take(5)->get();
+
+        $incoming = $logistics->filter(fn (Logistics $item) => strtolower($item->kategori) === 'masuk');
+        $outgoing = $logistics->filter(fn (Logistics $item) => strtolower($item->kategori) === 'keluar');
 
         $stats = [
             'total' => $logistics->count(),
             'pending' => $logistics->where('status', 'pending')->count(),
             'approved' => $logistics->where('status', 'approved')->count(),
             'rejected' => $logistics->where('status', 'rejected')->count(),
+            'totalValue' => (float) $logistics->sum(fn (Logistics $item) => (float) ($item->total_price ?? 0)),
+            'incomingValue' => (float) $incoming->sum(fn (Logistics $item) => (float) ($item->total_price ?? 0)),
+            'outgoingValue' => (float) $outgoing->sum(fn (Logistics $item) => (float) ($item->total_price ?? 0)),
         ];
 
-        $chart = [
-            'masuk' => $logistics->filter(fn (Logistics $item) => strtolower($item->kategori) === 'masuk')->sum('jumlah'),
-            'keluar' => $logistics->filter(fn (Logistics $item) => strtolower($item->kategori) === 'keluar')->sum('jumlah'),
+        $movementChart = [
+            'incomingValue' => $stats['incomingValue'],
+            'outgoingValue' => $stats['outgoingValue'],
+            'incomingQty' => $incoming->sum('jumlah'),
+            'outgoingQty' => $outgoing->sum('jumlah'),
         ];
+
+        $topItems = $logistics
+            ->groupBy(fn (Logistics $item) => $item->item?->name ?? $item->nama_barang)
+            ->map(function (Collection $group, string $name) {
+                return [
+                    'name' => $name,
+                    'transactions' => $group->count(),
+                    'quantity' => $group->sum('jumlah'),
+                    'value' => (float) $group->sum(fn (Logistics $item) => (float) ($item->total_price ?? 0)),
+                ];
+            })
+            ->sortByDesc('quantity')
+            ->take(5)
+            ->values();
+
+        $branchSummaries = $logistics
+            ->groupBy('branch_id')
+            ->map(function (Collection $group) {
+                $branch = $group->first()?->branch;
+
+                return [
+                    'branch' => $branch?->name ?? 'Tanpa Cabang',
+                    'transactions' => $group->count(),
+                    'quantity' => $group->sum('jumlah'),
+                    'value' => (float) $group->sum(fn (Logistics $item) => (float) ($item->total_price ?? 0)),
+                    'pending' => $group->where('status', 'pending')->count(),
+                ];
+            })
+            ->sortByDesc('value')
+            ->values();
 
         $recentActivities = Collection::make()
             ->merge($logistics->sortByDesc('created_at')->take(5)->map(function (Logistics $item) {
+                $valueLabel = $item->total_price !== null
+                    ? ' - Rp ' . number_format((float) $item->total_price, 0, ',', '.')
+                    : '';
+
                 return [
-                    'title' => "Data logistik {$item->nama_barang}",
-                    'meta' => "{$item->branch->name} - status " . ucfirst($item->status),
+                    'title' => 'Transaksi ' . ($item->item?->name ?? $item->nama_barang),
+                    'meta' => "{$item->branch->name} - {$item->kategori} {$item->jumlah} unit{$valueLabel}",
                     'time' => $item->created_at,
                 ];
             }))
@@ -69,8 +123,12 @@ class DashboardController extends Controller
         return view('dashboard', [
             'branchOptions' => $branchOptions,
             'selectedBranchId' => $selectedBranchId,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
             'stats' => $stats,
-            'chart' => $chart,
+            'movementChart' => $movementChart,
+            'topItems' => $topItems,
+            'branchSummaries' => $branchSummaries,
             'recentActivities' => $recentActivities,
             'isGlobalView' => $user->isFullAccess(),
         ]);

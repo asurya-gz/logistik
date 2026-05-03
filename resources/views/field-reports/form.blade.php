@@ -47,20 +47,28 @@
                     </div>
 
                     <div class="space-y-1.5">
-                        <label for="photo" class="block text-sm font-medium text-slate-700">
+                        <label for="photos" class="block text-sm font-medium text-slate-700">
                             Foto
                         </label>
                         <input
-                            id="photo"
-                            name="photo"
+                            id="photos"
+                            name="photos[]"
                             type="file"
                             accept="image/*"
+                            multiple
                             required
                             class="w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-slate-300 rounded-lg outline-none transition
                                    file:mr-3 file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:rounded-md file:text-slate-700
                                    focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
                         >
-                        @error('photo')
+                        <p class="text-xs text-slate-500 mt-1">Maksimal 10 foto per laporan.</p>
+                        @error('photos')
+                            <p class="text-xs text-red-500 flex items-center gap-1 mt-1">
+                                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                {{ $message }}
+                            </p>
+                        @enderror
+                        @error('photos.*')
                             <p class="text-xs text-red-500 flex items-center gap-1 mt-1">
                                 <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                 {{ $message }}

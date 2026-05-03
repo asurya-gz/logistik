@@ -90,6 +90,16 @@ class User extends Authenticatable
         return $this->isFullAccess();
     }
 
+    public function canManageItems(): bool
+    {
+        return $this->isFullAccess();
+    }
+
+    public function canManagePrices(): bool
+    {
+        return $this->isFullAccess();
+    }
+
     public function canUseExcelUpload(): bool
     {
         return $this->isFullAccess();

@@ -57,20 +57,38 @@ class FieldReportController extends Controller
 
         $data = $request->validate([
             'keterangan' => ['required', 'string'],
-            'photo' => ['required', 'image', 'max:4096'],
+            'photos' => ['required', 'array', 'max:10'],
+            'photos.*' => ['image', 'max:4096'],
         ]);
 
-        Logistics::create([
+        $logistics = Logistics::create([
             'nama_barang' => $fieldUser->name,
             'kategori' => 'masuk',
             'jumlah' => 1,
             'tanggal' => now()->toDateString(),
             'keterangan' => $data['keterangan'],
-            'photo_path' => $request->file('photo')->store('logistics-photos', 'public'),
             'status' => 'pending',
             'branch_id' => $fieldUser->branch_id,
             'created_by' => $fieldUser->id,
         ]);
+
+        $firstPath = null;
+
+        foreach ($request->file('photos', []) as $index => $file) {
+            $storedPath = $file->store('logistics-photos', 'public');
+            $firstPath ??= $storedPath;
+
+            $logistics->photos()->create([
+                'photo_path' => $storedPath,
+                'sort_order' => $index,
+            ]);
+        }
+
+        if ($firstPath) {
+            $logistics->update([
+                'photo_path' => $firstPath,
+            ]);
+        }
 
         return redirect()->route('field-reports.create')->with('success', 'Informasi lapangan berhasil dikirim.');
     }

@@ -8,9 +8,14 @@
             @if ($user->canEditInformation())
                 <div class="grid grid-2">
                     <div>
-                        <label for="nama_barang">Nama Pelapor / Judul</label>
-                        <input id="nama_barang" name="nama_barang" value="{{ old('nama_barang', $item->nama_barang) }}" required>
-                        @error('nama_barang') <div class="error-text">{{ $message }}</div> @enderror
+                        <label for="item_id">Barang</label>
+                        <select id="item_id" name="item_id" required>
+                            <option value="">Pilih barang</option>
+                            @foreach ($itemOptions as $option)
+                                <option value="{{ $option->id }}" @selected((int) old('item_id', $item->item_id) === $option->id)>{{ $option->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('item_id') <div class="error-text">{{ $message }}</div> @enderror
                     </div>
                     <div>
                         <label for="kategori">Kategori</label>
@@ -52,14 +57,23 @@
 
             <div class="grid grid-2">
                 <div>
-                    <label for="photo">Foto</label>
-                    <input id="photo" name="photo" type="file" accept="image/*" {{ $mode === 'create' ? 'required' : '' }}>
-                    @error('photo') <div class="error-text">{{ $message }}</div> @enderror
+                    <label for="photos">Foto</label>
+                    <input id="photos" name="photos[]" type="file" accept="image/*" multiple {{ $mode === 'create' ? 'required' : '' }}>
+                    <div class="muted">Maksimal 10 foto per data.</div>
+                    @error('photos') <div class="error-text">{{ $message }}</div> @enderror
+                    @error('photos.*') <div class="error-text">{{ $message }}</div> @enderror
                 </div>
-                @if ($item->photo_path)
+                @if (($item->relationLoaded('photos') && $item->photos->isNotEmpty()) || $item->photo_path)
                     <div>
                         <label>Foto Saat Ini</label>
-                        <a href="{{ \Illuminate\Support\Facades\Storage::url($item->photo_path) }}" target="_blank" class="button">Lihat Foto</a>
+                        <div class="actions">
+                            @foreach ($item->photos ?? collect() as $photo)
+                                <a href="{{ \Illuminate\Support\Facades\Storage::url($photo->photo_path) }}" target="_blank" class="button">Foto {{ $loop->iteration }}</a>
+                            @endforeach
+                            @if (($item->photos ?? collect())->isEmpty() && $item->photo_path)
+                                <a href="{{ \Illuminate\Support\Facades\Storage::url($item->photo_path) }}" target="_blank" class="button">Lihat Foto</a>
+                            @endif
+                        </div>
                     </div>
                 @endif
             </div>

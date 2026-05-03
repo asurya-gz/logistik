@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\Item;
+use App\Models\ItemPrice;
 use App\Models\Logistics;
 use App\Models\Upload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as SpreadsheetDate;
 
@@ -28,7 +31,7 @@ class UploadController extends Controller
 
         return view('uploads.index', [
             'uploads' => $query->paginate(10),
-            'branches' => Branch::orderBy('name')->get(),
+            'branches' => Branch::query()->orderBy('name')->get(),
             'user' => $user,
         ]);
     }
@@ -48,10 +51,14 @@ class UploadController extends Controller
 
         $branchId = $user->isFullAccess() ? (int) $validated['branch_id'] : $user->branch_id;
         $file = $request->file('file');
-        $rows = $this->parseSpreadsheet($file->getRealPath());
+        $rows = collect($this->parseSpreadsheet($file->getRealPath()))
+            ->map(fn (array $row) => $this->normalizeRow($row))
+            ->filter()
+            ->values()
+            ->all();
 
         if (count($rows) === 0) {
-            return back()->withErrors(['file' => 'File tidak berisi data yang dapat diimpor.'])->withInput();
+            return back()->withErrors(['file' => 'File tidak berisi baris valid yang dapat diimpor.'])->withInput();
         }
 
         $storedPath = $file->store('uploads', 'local');
@@ -66,10 +73,28 @@ class UploadController extends Controller
                     continue;
                 }
 
+                $item = Item::firstOrCreate(
+                    ['code' => $normalized['item_code']],
+                    [
+                        'name' => $normalized['nama_barang'],
+                        'description' => 'Dibuat otomatis dari upload Excel.',
+                        'is_active' => true,
+                    ]
+                );
+
+                if ($item->name !== $normalized['nama_barang']) {
+                    $item->update(['name' => $normalized['nama_barang']]);
+                }
+
+                $unitPrice = $this->resolveUnitPrice($item->id, $branchId, $normalized['tanggal']);
+
                 Logistics::create([
+                    'item_id' => $item->id,
                     'nama_barang' => $normalized['nama_barang'],
                     'kategori' => $normalized['kategori'],
                     'jumlah' => $normalized['jumlah'],
+                    'unit_price_snapshot' => $unitPrice,
+                    'total_price' => $unitPrice !== null ? $unitPrice * $normalized['jumlah'] : null,
                     'tanggal' => $normalized['tanggal'],
                     'keterangan' => $normalized['keterangan'],
                     'status' => 'pending',
@@ -120,6 +145,7 @@ class UploadController extends Controller
     private function normalizeRow(array $row): ?array
     {
         $namaBarang = trim((string) ($row['nama_barang'] ?? $row['nama barang'] ?? ''));
+        $itemCode = trim((string) ($row['kode_barang'] ?? $row['kode barang'] ?? Str::of($namaBarang)->slug('-')->upper()));
         $kategori = strtolower(trim((string) ($row['kategori'] ?? '')));
         $jumlah = (int) ($row['jumlah'] ?? 0);
         $tanggalValue = $row['tanggal'] ?? '';
@@ -138,11 +164,39 @@ class UploadController extends Controller
         }
 
         return [
+            'item_code' => $itemCode,
             'nama_barang' => $namaBarang,
             'kategori' => $kategori,
             'jumlah' => $jumlah,
             'tanggal' => date('Y-m-d', $parsedTanggal),
             'keterangan' => trim((string) ($row['keterangan'] ?? '')),
         ];
+    }
+
+    private function resolveUnitPrice(int $itemId, ?int $branchId, string $date): ?float
+    {
+        if ($branchId) {
+            $branchPrice = ItemPrice::query()
+                ->where('item_id', $itemId)
+                ->where('branch_id', $branchId)
+                ->effectiveOn($date)
+                ->latest('effective_date')
+                ->latest('id')
+                ->value('price');
+
+            if ($branchPrice !== null) {
+                return (float) $branchPrice;
+            }
+        }
+
+        $globalPrice = ItemPrice::query()
+            ->where('item_id', $itemId)
+            ->whereNull('branch_id')
+            ->effectiveOn($date)
+            ->latest('effective_date')
+            ->latest('id')
+            ->value('price');
+
+        return $globalPrice !== null ? (float) $globalPrice : null;
     }
 }
