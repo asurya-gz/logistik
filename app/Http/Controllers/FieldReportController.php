@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Logistics;
+use App\Models\LogisticsSupportingPhoto;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -58,7 +59,11 @@ class FieldReportController extends Controller
         $data = $request->validate([
             'keterangan' => ['required', 'string'],
             'photos' => ['required', 'array', 'max:10'],
-            'photos.*' => ['image', 'max:4096'],
+            'photos.*' => ['image', 'max:10240'],
+            'photo_dates' => ['nullable', 'array'],
+            'photo_dates.*' => ['nullable', 'date'],
+            'supporting_photos' => ['nullable', 'array', 'max:5'],
+            'supporting_photos.*' => ['image', 'max:5120'],
         ]);
 
         $logistics = Logistics::create([
@@ -73,6 +78,7 @@ class FieldReportController extends Controller
         ]);
 
         $firstPath = null;
+        $photoDates = $data['photo_dates'] ?? [];
 
         foreach ($request->file('photos', []) as $index => $file) {
             $storedPath = $file->store('logistics-photos', 'public');
@@ -81,6 +87,7 @@ class FieldReportController extends Controller
             $logistics->photos()->create([
                 'photo_path' => $storedPath,
                 'sort_order' => $index,
+                'tanggal' => $photoDates[$index] ?? null,
             ]);
         }
 
@@ -88,6 +95,18 @@ class FieldReportController extends Controller
             $logistics->update([
                 'photo_path' => $firstPath,
             ]);
+        }
+
+        // Handle supporting photos
+        if ($request->hasFile('supporting_photos')) {
+            foreach ($request->file('supporting_photos') as $file) {
+                $path = $file->store('supporting-photos', 'public');
+                LogisticsSupportingPhoto::create([
+                    'logistics_id' => $logistics->id,
+                    'uploaded_by' => $fieldUser->id,
+                    'photo_path' => $path,
+                ]);
+            }
         }
 
         return redirect()->route('field-reports.create')->with('success', 'Informasi lapangan berhasil dikirim.');

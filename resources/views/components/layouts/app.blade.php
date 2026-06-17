@@ -30,7 +30,7 @@
             radial-gradient(circle at top left, rgba(29,78,216,.14), transparent 24%),
             radial-gradient(circle at bottom right, rgba(15,118,110,.18), transparent 24%),
             linear-gradient(180deg, #f8fbfd 0%, var(--bg) 52%, var(--bg-deep) 100%); }
-        a { color: inherit; text-decoration: none; }
+        a { text-decoration: none; }
         .shell { min-height: 100vh; }
         .topbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(31,41,55,.08); background: rgba(255,255,255,.72); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 10; }
         .brand h1 { margin: 0; font-size: 1.2rem; }
@@ -119,6 +119,8 @@
             .toolbar { grid-template-columns: 1fr; }
             .pagination { justify-content: flex-start; overflow-x: auto; }
         }
+        /* Mobile sidebar scroll */
+        #sidebar { overflow-y: auto; -webkit-overflow-scrolling: touch; }
     </style>
 </head>
 <body>
@@ -140,15 +142,6 @@
                 ],
             ];
 
-            if ($user->canUseExcelUpload()) {
-                $navItems[] = [
-                    'label' => 'Upload Excel',
-                    'route' => route($user->panelRouteName('uploads.index')),
-                    'active' => request()->routeIs('*.uploads.*'),
-                    'icon' => 'upload',
-                ];
-            }
-
             if ($user->canManageItems()) {
                 $navItems[] = [
                     'label' => 'Barang',
@@ -158,16 +151,16 @@
                 ];
             }
 
-            if ($user->canManagePrices()) {
+            if ($user->canSuggestItems() || $user->canManageItems()) {
                 $navItems[] = [
-                    'label' => 'Harga',
-                    'route' => route('superadmin.prices.index'),
-                    'active' => request()->routeIs('superadmin.prices.*'),
-                    'icon' => 'prices',
+                    'label' => 'Usulan Barang',
+                    'route' => route($user->panelRouteName('item-suggestions.index')),
+                    'active' => request()->routeIs('*.item-suggestions.*'),
+                    'icon' => 'suggestions',
                 ];
             }
 
-            if ($user->canVerify()) {
+            if ($user->canViewVerifications()) {
                 $navItems[] = [
                     'label' => 'Verifikasi',
                     'route' => route($user->panelRouteName('verifications.index')),
@@ -194,138 +187,181 @@
                 ];
             }
         @endphp
-        <div class="min-h-screen lg:grid lg:h-screen lg:grid-cols-[248px_minmax(0,1fr)] lg:overflow-hidden">
-            <aside class="flex flex-col border-b border-slate-200 bg-white px-3.5 py-3.5 text-slate-700 shadow-[0_18px_50px_rgba(15,23,42,.05)] lg:h-screen lg:border-b-0 lg:border-r">
-                <div class="flex items-center gap-2.5">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 ring-1 ring-slate-900/5">
-                        <svg class="h-4.5 w-4.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        @php
+            if ($user->canManageItems()) {
+                $navItems[] = ['label' => 'Finalisasi', 'route' => route('superadmin.finalisasi.index'), 'active' => request()->routeIs('superadmin.finalisasi.*'), 'icon' => 'finalisasi'];
+            }
+            $initials = collect(explode(' ', $user->name))->map(fn($w) => strtoupper($w[0] ?? ''))->take(2)->join('');
+            $roleLabel = \App\Models\User::roleOptions()[$user->role] ?? $user->role;
+        @endphp
+        <div class="min-h-screen lg:grid lg:h-screen lg:grid-cols-[220px_minmax(0,1fr)] lg:overflow-hidden">
+
+            {{-- Mobile top bar --}}
+            <div class="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0e1117] text-white sticky top-0 z-30 shadow-lg">
+                <button id="mobile-menu-btn" type="button" class="flex items-center justify-center h-9 w-9 rounded-lg hover:bg-white/10 transition-colors" aria-label="Buka menu">
+                    <svg id="menu-icon-open" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <div class="flex items-center gap-2">
+                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/20 ring-1 ring-indigo-400/20">
+                        <svg class="h-3.5 w-3.5 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
                             <path d="M16.5 9.4 7.55 4.24"/>
                             <polyline points="3.29 7 12 12 20.71 7"/>
                             <line x1="12" x2="12" y1="22" y2="12"/>
                         </svg>
                     </div>
-                    <div>
-                        <h1 class="text-[13px] font-semibold tracking-wide text-slate-900">Sistem Logistik</h1>
-                        <p class="text-[11px] text-slate-500">Multi cabang</p>
+                    <span class="text-sm font-semibold">Sistem Logistik</span>
+                </div>
+                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500/25 text-[10px] font-bold text-indigo-300 ring-1 ring-indigo-400/20">
+                    {{ $initials }}
+                </div>
+            </div>
+
+            {{-- Sidebar overlay backdrop (mobile only) --}}
+            <div id="sidebar-backdrop" class="fixed inset-0 z-40 bg-black/50 hidden lg:hidden transition-opacity duration-300"></div>
+
+            {{-- Sidebar --}}
+            <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-[260px] flex flex-col bg-[#0e1117] px-3 py-4 transform -translate-x-full transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 lg:w-auto lg:h-screen lg:z-auto" style="border-right:1px solid rgba(255,255,255,0.06);color:white">
+
+                {{-- Mobile close button --}}
+                <button id="sidebar-close-btn" type="button" class="lg:hidden absolute top-3 right-3 flex items-center justify-center h-8 w-8 rounded-lg hover:bg-white/10 transition-colors" aria-label="Tutup menu">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+
+                {{-- Brand --}}
+                <div class="flex items-center gap-2.5 px-2 mb-5">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/20 ring-1 ring-indigo-400/20">
+                        <svg class="h-4 w-4 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/>
+                            <path d="M16.5 9.4 7.55 4.24"/>
+                            <polyline points="3.29 7 12 12 20.71 7"/>
+                            <line x1="12" x2="12" y1="22" y2="12"/>
+                        </svg>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[13px] font-semibold text-white leading-tight truncate">Sistem Logistik</p>
+                        <p class="text-[11px] text-slate-500 leading-tight">Multi cabang</p>
                     </div>
                 </div>
 
-                <nav class="mt-5 space-y-1">
+                {{-- Nav section label --}}
+                <p class="px-2.5 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">Menu</p>
+
+                {{-- Nav --}}
+                <nav class="flex-1 space-y-0.5">
                     @foreach ($navItems as $item)
-                        <a
-                            href="{{ $item['route'] }}"
-                            class="flex items-center justify-between rounded-xl px-2.5 py-2 text-[13px] font-medium transition {{ $item['active'] ? 'bg-slate-900 text-white shadow-[0_10px_24px_rgba(15,23,42,.18)] ring-1 ring-slate-900/10' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900' }}"
-                        >
-                            <span class="flex items-center gap-2">
-                                <span class="flex h-7 w-7 items-center justify-center rounded-lg {{ $item['active'] ? 'bg-white/14 text-white ring-1 ring-white/10' : 'bg-slate-100 text-slate-500' }}">
-                                    @switch($item['icon'])
-                                        @case('dashboard')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect x="3" y="3" width="7" height="9" rx="1.5"/>
-                                                <rect x="14" y="3" width="7" height="5" rx="1.5"/>
-                                                <rect x="14" y="12" width="7" height="9" rx="1.5"/>
-                                                <rect x="3" y="16" width="7" height="5" rx="1.5"/>
-                                            </svg>
-                                            @break
-                                        @case('logistics')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M3 7.5 12 3l9 4.5-9 4.5L3 7.5Z"/>
-                                                <path d="M3 12l9 4.5 9-4.5"/>
-                                                <path d="M3 16.5 12 21l9-4.5"/>
-                                            </svg>
-                                            @break
-                                        @case('upload')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M12 16V5"/>
-                                                <path d="m7 10 5-5 5 5"/>
-                                                <path d="M5 19h14"/>
-                                            </svg>
-                                            @break
-                                        @case('items')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M21 16V8a2 2 0 0 0-1.1-1.79l-6-3a2 2 0 0 0-1.8 0l-6 3A2 2 0 0 0 5 8v8a2 2 0 0 0 1.1 1.79l6 3a2 2 0 0 0 1.8 0l6-3A2 2 0 0 0 21 16Z"/>
-                                                <path d="m5.27 6.96 6.73 3.37 6.73-3.37"/>
-                                                <path d="M12 10.33V21"/>
-                                            </svg>
-                                            @break
-                                        @case('prices')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M12 1v22"/>
-                                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/>
-                                            </svg>
-                                            @break
-                                        @case('verification')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M9 12.75 11.25 15 15.5 9.75"/>
-                                                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9Z"/>
-                                            </svg>
-                                            @break
-                                        @case('users')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                                                <circle cx="9" cy="7" r="4"/>
-                                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                            </svg>
-                                            @break
-                                        @case('branches')
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M3 21h18"/>
-                                                <path d="M5 21V7l7-4 7 4v14"/>
-                                                <path d="M9 10h.01"/>
-                                                <path d="M15 10h.01"/>
-                                                <path d="M9 14h.01"/>
-                                                <path d="M15 14h.01"/>
-                                            </svg>
-                                            @break
-                                    @endswitch
-                                </span>
-                                <span class="leading-none {{ $item['active'] ? 'text-white' : '' }}">{{ $item['label'] }}</span>
+                        <a href="{{ $item['route'] }}"
+                            class="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all
+                                {{ $item['active']
+                                    ? 'bg-white/8 text-white'
+                                    : 'text-white hover:bg-white/4' }}">
+                            <span class="flex h-5 w-5 shrink-0 items-center justify-center
+                                {{ $item['active'] ? 'text-indigo-300' : 'text-slate-400 group-hover:text-slate-200' }}">
+                                @switch($item['icon'])
+                                    @case('dashboard')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="3" y="3" width="7" height="9" rx="1.5"/>
+                                            <rect x="14" y="3" width="7" height="5" rx="1.5"/>
+                                            <rect x="14" y="12" width="7" height="9" rx="1.5"/>
+                                            <rect x="3" y="16" width="7" height="5" rx="1.5"/>
+                                        </svg>
+                                        @break
+                                    @case('logistics')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 7.5 12 3l9 4.5-9 4.5L3 7.5Z"/>
+                                            <path d="M3 12l9 4.5 9-4.5"/>
+                                            <path d="M3 16.5 12 21l9-4.5"/>
+                                        </svg>
+                                        @break
+                                    @case('items')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 16V8a2 2 0 0 0-1.1-1.79l-6-3a2 2 0 0 0-1.8 0l-6 3A2 2 0 0 0 5 8v8a2 2 0 0 0 1.1 1.79l6 3a2 2 0 0 0 1.8 0l6-3A2 2 0 0 0 21 16Z"/>
+                                            <path d="m5.27 6.96 6.73 3.37 6.73-3.37"/>
+                                            <path d="M12 10.33V21"/>
+                                        </svg>
+                                        @break
+                                    @case('suggestions')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                        </svg>
+                                        @break
+                                    @case('verification')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 12.75 11.25 15 15.5 9.75"/>
+                                            <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9Z"/>
+                                        </svg>
+                                        @break
+                                    @case('finalisasi')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M9 11l3 3L22 4"/>
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                                        </svg>
+                                        @break
+                                    @case('users')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="9" cy="7" r="4"/>
+                                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                        </svg>
+                                        @break
+                                    @case('branches')
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 21h18"/>
+                                            <path d="M5 21V7l7-4 7 4v14"/>
+                                            <path d="M9 10h.01"/>
+                                            <path d="M15 10h.01"/>
+                                            <path d="M9 14h.01"/>
+                                            <path d="M15 14h.01"/>
+                                        </svg>
+                                        @break
+                                @endswitch
                             </span>
+                            {{ $item['label'] }}
                             @if ($item['active'])
-                                <span class="h-2 w-2 rounded-full bg-emerald-400 ring-4 ring-emerald-400/15"></span>
+                                <span class="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
                             @endif
                         </a>
                     @endforeach
                 </nav>
 
-                <form id="logout-form" class="mt-auto pt-5 lg:pt-6" method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button
-                        id="open-logout-modal"
-                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-[13px] font-semibold text-red-600 transition hover:bg-red-100 hover:text-red-700"
-                        type="button"
-                    >
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                            <path d="m16 17 5-5-5-5"/>
-                            <path d="M21 12H9"/>
-                        </svg>
-                        Logout
-                    </button>
-                </form>
+                {{-- User footer --}}
+                <div class="mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.07)">
+                    <div class="mb-1 flex items-center gap-2.5 rounded-lg px-2.5 py-2">
+                        <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-500/25 text-[11px] font-bold text-indigo-300 ring-1 ring-indigo-400/20">
+                            {{ $initials }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[12px] font-semibold text-slate-200 leading-tight truncate">{{ $user->name }}</p>
+                            <p class="text-[11px] text-slate-500 leading-tight truncate">{{ $roleLabel }}</p>
+                        </div>
+                    </div>
+                    <form id="logout-form" method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button id="open-logout-modal" type="button"
+                            class="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-[13px] text-slate-500 transition hover:bg-white/5 hover:text-red-400">
+                            <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <path d="m16 17 5-5-5-5"/>
+                                <path d="M21 12H9"/>
+                            </svg>
+                            Logout
+                        </button>
+                    </form>
+                </div>
             </aside>
 
-            <main class="min-w-0 p-4 sm:p-6 lg:h-screen lg:overflow-y-auto lg:p-8">
+            <main class="min-w-0 p-4 sm:p-5 lg:h-screen lg:overflow-y-auto">
                 <div class="mx-auto max-w-7xl">
-                    <header class="mb-6 flex flex-col gap-3 rounded-3xl border border-white/60 bg-white/72 px-5 py-4 shadow-[0_18px_50px_rgba(15,23,42,.06)] backdrop-blur xl:flex-row xl:items-center xl:justify-between">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ $title ?? 'Dashboard' }}</p>
-                            <p class="mt-1 text-lg font-semibold text-slate-900">Panel operasional dengan navigasi yang lebih fokus.</p>
-                        </div>
-                        <div class="text-sm text-slate-500">
-                            <span>{{ $user->name }}</span>
-                            <span class="mx-2 text-slate-300">|</span>
-                            <span>{{ \App\Models\User::roleOptions()[$user->role] ?? $user->role }}</span>
-                        </div>
-                    </header>
-                
                 @if (session('success'))
-                    <div class="flash flash-success">{{ session('success') }}</div>
+                    <div class="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('success') }}</div>
                 @endif
                 @if (session('error'))
-                    <div class="flash flash-error">{{ session('error') }}</div>
+                    <div class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{{ session('error') }}</div>
                 @endif
                     {{ $slot }}
                 </div>
@@ -370,6 +406,42 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // ── Mobile sidebar toggle ──
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            const menuBtn = document.getElementById('mobile-menu-btn');
+            const closeBtn = document.getElementById('sidebar-close-btn');
+
+            const openSidebar = () => {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                backdrop.classList.remove('hidden');
+                backdrop.classList.add('block');
+                document.body.classList.add('overflow-hidden');
+            };
+
+            const closeSidebar = () => {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('translate-x-0');
+                backdrop.classList.add('hidden');
+                backdrop.classList.remove('block');
+                document.body.classList.remove('overflow-hidden');
+            };
+
+            if (menuBtn) menuBtn.addEventListener('click', openSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            if (backdrop) backdrop.addEventListener('click', closeSidebar);
+
+            // Close sidebar when a nav link is clicked (mobile)
+            if (sidebar) {
+                sidebar.querySelectorAll('a[href]').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth < 1024) closeSidebar();
+                    });
+                });
+            }
+
+            // ── Logout modal ──
             const openLogoutModalButton = document.getElementById('open-logout-modal');
             const logoutModal = document.getElementById('logout-modal');
             const cancelLogoutButton = document.getElementById('cancel-logout');
@@ -403,8 +475,9 @@
             });
 
             document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && !logoutModal.classList.contains('hidden')) {
-                    closeModal();
+                if (event.key === 'Escape') {
+                    if (!logoutModal.classList.contains('hidden')) closeModal();
+                    if (sidebar && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) closeSidebar();
                 }
             });
         });

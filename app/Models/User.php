@@ -65,6 +65,16 @@ class User extends Authenticatable
         return $this->hasMany(Verification::class, 'verified_by');
     }
 
+    public function itemSuggestions(): HasMany
+    {
+        return $this->hasMany(ItemSuggestion::class, 'suggested_by');
+    }
+
+    public function reviewedSuggestions(): HasMany
+    {
+        return $this->hasMany(ItemSuggestion::class, 'reviewed_by');
+    }
+
     public function isFullAccess(): bool
     {
         return $this->role === self::ROLE_KANTOR;
@@ -95,14 +105,19 @@ class User extends Authenticatable
         return $this->isFullAccess();
     }
 
+    public function canSuggestItems(): bool
+    {
+        return $this->isMediumAccess();
+    }
+
     public function canManagePrices(): bool
     {
         return $this->isFullAccess();
     }
 
-    public function canUseExcelUpload(): bool
+    public function canViewVerifications(): bool
     {
-        return $this->isFullAccess();
+        return $this->isFullAccess() || $this->isMediumAccess();
     }
 
     public function canVerify(): bool
@@ -110,9 +125,24 @@ class User extends Authenticatable
         return $this->isFullAccess();
     }
 
+    public function canSetPhotoStatus(): bool
+    {
+        return $this->isFullAccess() || $this->isMediumAccess();
+    }
+
+    public function canWriteLogistikNote(): bool
+    {
+        return $this->isMediumAccess();
+    }
+
+    public function canAddPhotosToRejected(): bool
+    {
+        return $this->isMediumAccess();
+    }
+
     public function canAddOfficeNote(): bool
     {
-        return $this->isMediumAccess() || $this->isFullAccess();
+        return $this->isMediumAccess();
     }
 
     public function canEditInformation(): bool
@@ -144,5 +174,19 @@ class User extends Authenticatable
             self::ROLE_LOGISTIK => 'Officer / M. Logistik',
             self::ROLE_LAPANGAN => 'M. Lapangan',
         ];
+    }
+
+    public static function identityRoleCodes(): array
+    {
+        return [
+            self::ROLE_KANTOR => 'KTR',
+            self::ROLE_LOGISTIK => 'LOG',
+            self::ROLE_LAPANGAN => 'LPG',
+        ];
+    }
+
+    public static function identityRoleCode(?string $role): ?string
+    {
+        return self::identityRoleCodes()[$role] ?? null;
     }
 }

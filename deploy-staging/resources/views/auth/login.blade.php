@@ -39,7 +39,7 @@
                             name="email"
                             type="email"
                             value="{{ old('email') }}"
-                            placeholder="nama@perusahaan.com"
+                            placeholder="masukan email"
                             required
                             autofocus
                             class="w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border rounded-lg outline-none transition

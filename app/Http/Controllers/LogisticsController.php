@@ -24,7 +24,7 @@ class LogisticsController extends Controller
         $maxPrice = $request->input('max_price');
 
         $query = Logistics::query()
-            ->with(['branch', 'creator', 'item', 'photos'])
+            ->with(['branch', 'creator', 'item', 'photos', 'logistikNotedBy'])
             ->visibleTo($user)
             ->latest('tanggal');
 
@@ -161,6 +161,76 @@ class LogisticsController extends Controller
         $logistics->delete();
 
         return redirect()->route($user->panelRouteName('logistics.index'))->with('success', 'Informasi berhasil dihapus.');
+    }
+
+    public function addPhotosForm(Request $request, Logistics $logistics)
+    {
+        $user = $request->user();
+
+        if (! $user->canAddPhotosToRejected()) {
+            abort(403);
+        }
+
+        $this->authorizeAccess($user, $logistics);
+
+        if ($logistics->status !== 'rejected') {
+            return redirect()->route($user->panelRouteName('logistics.index'))
+                ->with('error', 'Hanya laporan yang ditolak yang bisa ditambah foto.');
+        }
+
+        $logistics->loadMissing('photos');
+
+        return view('logistics.add-photos', [
+            'logistics' => $logistics,
+            'user' => $user,
+        ]);
+    }
+
+    public function addPhotos(Request $request, Logistics $logistics)
+    {
+        $user = $request->user();
+
+        if (! $user->canAddPhotosToRejected()) {
+            abort(403);
+        }
+
+        $this->authorizeAccess($user, $logistics);
+
+        if ($logistics->status !== 'rejected') {
+            abort(422, 'Hanya laporan yang ditolak yang bisa ditambah foto.');
+        }
+
+        $existing = $logistics->photos()->count();
+        $remaining = 10 - $existing;
+
+        $request->validate([
+            'photos'        => ['required', 'array', "max:{$remaining}"],
+            'photos.*'      => ['image', 'max:4096'],
+            'photo_dates'   => ['nullable', 'array'],
+            'photo_dates.*' => ['nullable', 'date'],
+        ]);
+
+        $photoDates = $request->input('photo_dates', []);
+        $firstPath  = null;
+
+        foreach ($request->file('photos', []) as $index => $file) {
+            $storedPath = $file->store('logistics-photos', 'public');
+            $firstPath ??= $storedPath;
+
+            $logistics->photos()->create([
+                'photo_path' => $storedPath,
+                'sort_order' => $existing + $index,
+                'tanggal'    => $photoDates[$index] ?? null,
+            ]);
+        }
+
+        $logistics->update([
+            'status'      => 'pending',
+            'photo_path'  => $firstPath ?? $logistics->photo_path,
+        ]);
+
+        return redirect()->route($user->panelRouteName('logistics.index'))
+            ->with('success', 'Foto berhasil ditambahkan dan laporan dikembalikan ke pending.');
     }
 
     public function updateOfficeNote(Request $request, Logistics $logistics)

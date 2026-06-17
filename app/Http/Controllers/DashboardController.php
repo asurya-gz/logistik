@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $branchOptions = Branch::query()->orderBy('name')->get();
 
         $logisticsQuery = Logistics::query()
-            ->with(['branch', 'creator', 'item'])
+            ->with(['branch', 'creator', 'item', 'photos'])
             ->visibleTo($user);
 
         $uploadsQuery = Upload::query()
@@ -51,6 +51,27 @@ class DashboardController extends Controller
         $incoming = $logistics->filter(fn (Logistics $item) => strtolower($item->kategori) === 'masuk');
         $outgoing = $logistics->filter(fn (Logistics $item) => strtolower($item->kategori) === 'keluar');
 
+        // Today stats
+        $today = $logistics->filter(fn (Logistics $item) => $item->tanggal?->isToday() ?? false);
+        $todayApproved = $today->where('status', 'approved')->count();
+        $todayPending = $today->where('status', 'pending')->count();
+
+        // Approval rate
+        $verified = $logistics->whereIn('status', ['approved', 'rejected']);
+        $approvalRate = $verified->count() > 0
+            ? round(($verified->where('status', 'approved')->count() / $verified->count()) * 100)
+            : 0;
+
+        // Total photos
+        $totalPhotos = $logistics->sum(fn (Logistics $item) => $item->photos->count());
+
+        // Latest pending (butuh tindakan)
+        $pendingItems = $logistics
+            ->where('status', 'pending')
+            ->sortByDesc('created_at')
+            ->take(5)
+            ->values();
+
         $stats = [
             'total' => $logistics->count(),
             'pending' => $logistics->where('status', 'pending')->count(),
@@ -66,6 +87,8 @@ class DashboardController extends Controller
             'outgoingValue' => $stats['outgoingValue'],
             'incomingQty' => $incoming->sum('jumlah'),
             'outgoingQty' => $outgoing->sum('jumlah'),
+            'incomingReports' => $incoming->count(),
+            'outgoingReports' => $outgoing->count(),
         ];
 
         $topItems = $logistics
@@ -106,7 +129,7 @@ class DashboardController extends Controller
 
                 return [
                     'title' => 'Transaksi ' . ($item->item?->name ?? $item->nama_barang),
-                    'meta' => "{$item->branch->name} - {$item->kategori} {$item->jumlah} unit{$valueLabel}",
+                    'meta' => "{$item->branch->name} - {$item->kategori} {$item->jumlah} pcs{$valueLabel}",
                     'time' => $item->created_at,
                 ];
             }))
@@ -131,6 +154,13 @@ class DashboardController extends Controller
             'branchSummaries' => $branchSummaries,
             'recentActivities' => $recentActivities,
             'isGlobalView' => $user->isFullAccess(),
+            'todayCount' => $today->count(),
+            'todayValue' => (float) $today->sum(fn (Logistics $item) => (float) ($item->total_price ?? 0)),
+            'todayApproved' => $todayApproved,
+            'todayPending' => $todayPending,
+            'approvalRate' => $approvalRate,
+            'totalPhotos' => $totalPhotos,
+            'pendingItems' => $pendingItems,
         ]);
     }
 }

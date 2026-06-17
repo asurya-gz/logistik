@@ -6,7 +6,6 @@ use App\Models\Branch;
 use App\Models\Item;
 use App\Models\ItemPrice;
 use App\Models\Logistics;
-use App\Models\Upload;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -52,6 +51,179 @@ class LogisticsAppTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Manajemen User');
+        $response->assertSee('QR Code');
+    }
+
+    public function test_kantor_can_see_and_download_generated_user_barcode(): void
+    {
+        $branch = Branch::create([
+            'name' => 'Cabang Barcode',
+            'code' => 'BCD',
+            'address' => 'Alamat Barcode',
+        ]);
+
+        $manager = User::create([
+            'name' => 'Manajemen Kantor',
+            'email' => 'kantor-barcode@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_KANTOR,
+        ]);
+
+        $fieldUser = User::create([
+            'name' => 'Petugas Barcode',
+            'email' => 'lapangan-barcode@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_LAPANGAN,
+            'identity_number' => 'LPG-123-XY',
+            'branch_id' => $branch->id,
+        ]);
+
+        $indexResponse = $this->actingAs($manager)->get(route('superadmin.users.index'));
+
+        $indexResponse->assertOk();
+        $indexResponse->assertSee('Unduh QR Code');
+        $indexResponse->assertSee(route('superadmin.users.barcode', $fieldUser), false);
+        $indexResponse->assertSee('LPG-123-XY');
+
+        $downloadResponse = $this->actingAs($manager)->get(route('superadmin.users.barcode', $fieldUser));
+
+        $downloadResponse->assertOk();
+        $downloadResponse->assertHeader('content-disposition', 'attachment; filename="qr-code-lpg-123-xy.svg"');
+        $this->assertStringContainsString('<svg', $downloadResponse->getContent());
+        $this->assertStringContainsString('LPG-123-XY', $downloadResponse->getContent());
+    }
+
+    public function test_identity_preview_uses_role_branch_and_unique_index(): void
+    {
+        $branch = Branch::create([
+            'name' => 'Cabang Jakarta',
+            'code' => 'JKT',
+            'address' => 'Alamat Jakarta',
+        ]);
+
+        $manager = User::create([
+            'name' => 'Manajemen Kantor',
+            'email' => 'kantor-preview@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_KANTOR,
+        ]);
+
+        User::create([
+            'name' => 'Lapangan Lama',
+            'email' => 'lapangan-lama@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_LAPANGAN,
+            'identity_number' => 'LPG-JKT-001',
+            'branch_id' => $branch->id,
+        ]);
+
+        $response = $this->actingAs($manager)->getJson(route('superadmin.users.identity-preview', [
+            'role' => User::ROLE_LAPANGAN,
+            'branch_id' => $branch->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertJson([
+            'identity_number' => 'LPG-JKT-002',
+        ]);
+    }
+
+    public function test_kantor_can_create_user_with_generated_identity_number(): void
+    {
+        $branch = Branch::create([
+            'name' => 'Cabang Bandung',
+            'code' => 'BDG',
+            'address' => 'Alamat Bandung',
+        ]);
+
+        $manager = User::create([
+            'name' => 'Manajemen Kantor',
+            'email' => 'kantor-generate@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_KANTOR,
+        ]);
+
+        User::create([
+            'name' => 'Petugas Sebelumnya',
+            'email' => 'sebelumnya@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_LAPANGAN,
+            'identity_number' => 'LPG-BDG-001',
+            'branch_id' => $branch->id,
+        ]);
+
+        $response = $this->actingAs($manager)->post(route('superadmin.users.store'), [
+            'name' => 'Petugas Baru',
+            'password' => 'password123',
+            'role' => User::ROLE_LAPANGAN,
+            'identity_number' => 'MANUAL-OVERRIDE',
+            'branch_id' => $branch->id,
+        ]);
+
+        $response->assertRedirect(route('superadmin.users.index'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => null,
+            'identity_number' => 'LPG-BDG-002',
+            'branch_id' => $branch->id,
+        ]);
+    }
+
+    public function test_lapangan_user_can_be_created_without_email(): void
+    {
+        $branch = Branch::create([
+            'name' => 'Cabang Surabaya',
+            'code' => 'SBY',
+            'address' => 'Alamat Surabaya',
+        ]);
+
+        $manager = User::create([
+            'name' => 'Manajemen Kantor',
+            'email' => 'kantor-lapangan@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_KANTOR,
+        ]);
+
+        $response = $this->actingAs($manager)->post(route('superadmin.users.store'), [
+            'name' => 'Petugas Tanpa Email',
+            'password' => 'password123',
+            'role' => User::ROLE_LAPANGAN,
+            'branch_id' => $branch->id,
+        ]);
+
+        $response->assertRedirect(route('superadmin.users.index'));
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'Petugas Tanpa Email',
+            'email' => null,
+            'identity_number' => 'LPG-SBY-001',
+        ]);
+    }
+
+    public function test_non_lapangan_user_still_requires_email(): void
+    {
+        $branch = Branch::create([
+            'name' => 'Cabang Semarang',
+            'code' => 'SMG',
+            'address' => 'Alamat Semarang',
+        ]);
+
+        $manager = User::create([
+            'name' => 'Manajemen Kantor',
+            'email' => 'kantor-require-email@test.local',
+            'password' => 'password',
+            'role' => User::ROLE_KANTOR,
+        ]);
+
+        $response = $this->actingAs($manager)->from(route('superadmin.users.create'))->post(route('superadmin.users.store'), [
+            'name' => 'Officer Tanpa Email',
+            'password' => 'password123',
+            'role' => User::ROLE_LOGISTIK,
+            'branch_id' => $branch->id,
+        ]);
+
+        $response->assertRedirect(route('superadmin.users.create'));
+        $response->assertSessionHasErrors('email');
     }
 
     public function test_kantor_can_access_item_and_price_management(): void
@@ -381,133 +553,4 @@ class LogisticsAppTest extends TestCase
         $response->assertSessionHasErrors('identity_number');
     }
 
-    public function test_kantor_can_import_excel_and_create_item_snapshot_transaction(): void
-    {
-        Storage::fake('local');
-
-        $branch = Branch::create([
-            'name' => 'Cabang Import',
-            'code' => 'IMP',
-            'address' => 'Alamat Import',
-        ]);
-
-        $user = User::create([
-            'name' => 'Manajemen Kantor',
-            'email' => 'kantor-import@test.local',
-            'password' => 'password',
-            'role' => User::ROLE_KANTOR,
-        ]);
-
-        $item = Item::create([
-            'code' => 'BRG-001',
-            'name' => 'Laptop ThinkPad',
-            'is_active' => true,
-        ]);
-
-        ItemPrice::create([
-            'item_id' => $item->id,
-            'branch_id' => $branch->id,
-            'price' => 15000000,
-            'effective_date' => now()->toDateString(),
-            'created_by' => $user->id,
-        ]);
-
-        $fallbackItem = Item::create([
-            'code' => 'LAPTOP-THINKPAD',
-            'name' => 'Laptop ThinkPad',
-            'is_active' => true,
-        ]);
-
-        ItemPrice::create([
-            'item_id' => $fallbackItem->id,
-            'branch_id' => $branch->id,
-            'price' => 15000000,
-            'effective_date' => now()->toDateString(),
-            'created_by' => $user->id,
-        ]);
-
-        $filePath = storage_path('framework/testing/import-logistik.csv');
-        $this->createCsv($filePath, [
-            ['kode_barang', 'nama_barang', 'kategori', 'jumlah', 'tanggal', 'keterangan'],
-            ['BRG-001', 'Laptop ThinkPad', 'masuk', 2, now()->toDateString(), 'Import stok showroom'],
-        ]);
-
-        $response = $this->actingAs($user)->post(route('superadmin.uploads.store'), [
-            'branch_id' => $branch->id,
-            'file' => new UploadedFile($filePath, 'import-logistik.csv', 'text/csv', null, true),
-        ]);
-
-        $response->assertRedirect(route('superadmin.uploads.index'));
-
-        $this->assertDatabaseHas('logistics', [
-            'branch_id' => $branch->id,
-            'nama_barang' => 'Laptop ThinkPad',
-            'jumlah' => 2,
-            'unit_price_snapshot' => 15000000.00,
-            'total_price' => 30000000.00,
-            'keterangan' => 'Import stok showroom',
-        ]);
-
-        $this->assertDatabaseHas('uploads', [
-            'branch_id' => $branch->id,
-            'uploaded_by' => $user->id,
-            'total_rows' => 1,
-        ]);
-
-        @unlink($filePath);
-    }
-
-    public function test_excel_import_rejects_file_with_only_invalid_rows(): void
-    {
-        Storage::fake('local');
-
-        $branch = Branch::create([
-            'name' => 'Cabang Invalid',
-            'code' => 'INV',
-            'address' => 'Alamat Invalid',
-        ]);
-
-        $user = User::create([
-            'name' => 'Manajemen Kantor',
-            'email' => 'kantor-invalid-import@test.local',
-            'password' => 'password',
-            'role' => User::ROLE_KANTOR,
-        ]);
-
-        $filePath = storage_path('framework/testing/import-invalid.csv');
-        $this->createCsv($filePath, [
-            ['kode_barang', 'nama_barang', 'kategori', 'jumlah', 'tanggal', 'keterangan'],
-            ['', '', 'unknown', 0, '', 'Baris invalid'],
-        ]);
-
-        $response = $this->from(route('superadmin.uploads.index'))->actingAs($user)->post(route('superadmin.uploads.store'), [
-            'branch_id' => $branch->id,
-            'file' => new UploadedFile($filePath, 'import-invalid.csv', 'text/csv', null, true),
-        ]);
-
-        $response->assertRedirect(route('superadmin.uploads.index'));
-        $response->assertSessionHasErrors('file');
-
-        $this->assertDatabaseCount('logistics', 0);
-        $this->assertDatabaseCount('uploads', 0);
-
-        @unlink($filePath);
-    }
-
-    private function createCsv(string $path, array $rows): void
-    {
-        $directory = dirname($path);
-
-        if (! is_dir($directory)) {
-            mkdir($directory, 0777, true);
-        }
-
-        $handle = fopen($path, 'w');
-
-        foreach ($rows as $row) {
-            fputcsv($handle, $row);
-        }
-
-        fclose($handle);
-    }
 }

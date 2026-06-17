@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\User;
+use App\Support\UserIdentityBarcode;
+use App\Support\UserIdentityNumberGenerator;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +22,7 @@ class UserController extends Controller
     {
         return view('users.index', [
             'users' => User::with('branch')->orderBy('name')->paginate(10),
+            'barcode' => app(UserIdentityBarcode::class),
         ]);
     }
 
@@ -29,6 +34,8 @@ class UserController extends Controller
         return view('users.form', [
             'userModel' => new User(),
             'branches' => Branch::orderBy('name')->get(),
+            'barcode' => app(UserIdentityBarcode::class),
+            'identityGenerator' => app(UserIdentityNumberGenerator::class),
             'roles' => User::roleOptions(),
             'mode' => 'create',
         ]);
@@ -43,10 +50,10 @@ class UserController extends Controller
 
         User::create([
             'name' => $data['name'],
-            'email' => $data['email'],
+            'email' => $this->resolveEmail($data),
             'password' => $data['password'],
             'role' => $data['role'],
-            'identity_number' => $data['identity_number'] ?: null,
+            'identity_number' => $this->resolveIdentityNumber($data),
             'branch_id' => $this->resolveBranchId($data),
         ]);
 
@@ -69,9 +76,35 @@ class UserController extends Controller
         return view('users.form', [
             'userModel' => $user,
             'branches' => Branch::orderBy('name')->get(),
+            'barcode' => app(UserIdentityBarcode::class),
+            'identityGenerator' => app(UserIdentityNumberGenerator::class),
             'roles' => User::roleOptions(),
             'mode' => 'edit',
         ]);
+    }
+
+    public function identityPreview(Request $request, UserIdentityNumberGenerator $identityGenerator): JsonResponse
+    {
+        $data = $request->validate([
+            'role' => ['nullable', Rule::in(array_keys(User::roleOptions()))],
+            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        $user = isset($data['user_id']) ? User::find($data['user_id']) : null;
+
+        return response()->json([
+            'identity_number' => $identityGenerator->generate(
+                $data['role'] ?? null,
+                isset($data['branch_id']) ? (int) $data['branch_id'] : null,
+                $user
+            ),
+        ]);
+    }
+
+    public function barcode(User $user, UserIdentityBarcode $barcode): Response
+    {
+        return $barcode->downloadResponse($user);
     }
 
     /**
@@ -83,9 +116,9 @@ class UserController extends Controller
 
         $payload = [
             'name' => $data['name'],
-            'email' => $data['email'],
+            'email' => $this->resolveEmail($data),
             'role' => $data['role'],
-            'identity_number' => $data['identity_number'] ?: null,
+            'identity_number' => $this->resolveIdentityNumber($data, $user),
             'branch_id' => $this->resolveBranchId($data),
         ];
 
@@ -118,24 +151,22 @@ class UserController extends Controller
             ? ['nullable', 'string', 'min:8']
             : ['required', 'string', 'min:8'];
 
+        $role = $request->input('role');
+        $emailRules = $role === User::ROLE_LAPANGAN
+            ? ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)]
+            : ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)];
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
+            'email' => $emailRules,
             'password' => $passwordRules,
             'role' => ['required', Rule::in(array_keys(User::roleOptions()))],
-            'identity_number' => ['nullable', 'string', 'max:255', Rule::unique('users', 'identity_number')->ignore($user?->id)],
             'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
         ]);
 
         if ($data['role'] !== User::ROLE_KANTOR && empty($data['branch_id'])) {
             throw ValidationException::withMessages([
                 'branch_id' => 'Cabang wajib dipilih untuk role selain M. Kantor.',
-            ]);
-        }
-
-        if ($data['role'] === User::ROLE_LAPANGAN && empty($data['identity_number'])) {
-            throw ValidationException::withMessages([
-                'identity_number' => 'Nomor identitas wajib diisi untuk M. Lapangan.',
             ]);
         }
 
@@ -151,5 +182,21 @@ class UserController extends Controller
         return $data['role'] === User::ROLE_KANTOR
             ? null
             : (int) $data['branch_id'];
+    }
+
+    private function resolveIdentityNumber(array $data, ?User $user = null): ?string
+    {
+        return app(UserIdentityNumberGenerator::class)->generate(
+            $data['role'],
+            $data['role'] === User::ROLE_KANTOR ? null : (int) $data['branch_id'],
+            $user
+        );
+    }
+
+    private function resolveEmail(array $data): ?string
+    {
+        return $data['role'] === User::ROLE_LAPANGAN
+            ? null
+            : $data['email'];
     }
 }
